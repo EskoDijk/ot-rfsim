@@ -29,13 +29,33 @@
 /**
 * @file
 * @brief
-*   This file includes simulation-event message formatting and parsing functions.
+*   This file includes simulation-event message definitions, and formatting and
+ *   parsing functions.
 */
 
 #ifndef PLATFORM_SIMULATION_EVENT_SIM_H
 #define PLATFORM_SIMULATION_EVENT_SIM_H
 
-#include "platform-simulation.h"
+/**
+ * The event types defined for communication with a simulator and/or with other simulated nodes.
+ * Shared for both 'real' and virtual-time event types.
+ */
+enum
+{
+    OT_SIM_EVENT_ALARM_FIRED         = 0,
+    OT_SIM_EVENT_RADIO_RECEIVED      = 1,
+    OT_SIM_EVENT_UART_WRITE          = 2,
+    OT_SIM_EVENT_RADIO_SPINEL_WRITE  = 3,
+    OT_SIM_EVENT_POSTCMD             = 4,
+    OT_SIM_EVENT_OTNS_STATUS_PUSH    = 5,
+    OT_SIM_EVENT_RADIO_COMM_START    = 6,
+    OT_SIM_EVENT_RADIO_TX_DONE       = 7,
+    OT_SIM_EVENT_RADIO_CHAN_SAMPLE   = 8,
+    OT_SIM_EVENT_RADIO_STATE         = 9,
+    OT_SIM_EVENT_RADIO_RX_DONE       = 10,
+};
+
+#define OT_EVENT_DATA_MAX_SIZE 1024
 
 OT_TOOL_PACKED_BEGIN
 struct Event
@@ -64,54 +84,6 @@ struct RadioStateEventData
     uint8_t  mSubState;
     uint8_t  mState; // OT state of radio (disabled, sleep, Tx, Rx)
 } OT_TOOL_PACKED_END;
-
-/**
- * This function checks if the radio is busy performing some task such as transmission,
- * actively receiving a frame, returning an ACK, or doing a CCA. Idle listening (Rx) does
- * not count as busy.
- *
- * @returns Whether radio is busy with a task.
- *
- */
-bool platformRadioIsBusy(void);
-
-/**
- * This function signals the start of a received radio frame.
- *
- * @param[in]  aInstance   A pointer to the OpenThread instance.
- * @param[in]  aRxParams   A pointer to parameters related to the reception event.
- *
- */
-void platformRadioRxStart(otInstance *aInstance, struct RadioCommEventData *aRxParams);
-
-/**
- * This function signals the end of a received radio frame and inputs the frame data.
- *
- * @param[in]  aInstance   A pointer to the OpenThread instance.
- * @param[in]  aBuf        A pointer to the received radio frame (struct RadioMessage).
- * @param[in]  aBufLength  The size of the received radio frame (struct RadioMessage).
- * @param[in]  aRxParams   A pointer to parameters related to the reception event.
- *
- */
-void platformRadioRxDone(otInstance *aInstance, const uint8_t *aBuf, uint16_t aBufLength, struct RadioCommEventData *aRxParams);
-
-/**
- * This function signals that virtual radio is done transmitting a single frame.
- *
- * @param[in]  aInstance     A pointer to the OpenThread instance.
- * @param[in]  aTxDoneParams A pointer to status parameters for the attempt to transmit the virtual radio frame.
- *
- */
-void platformRadioTxDone(otInstance *aInstance, struct RadioCommEventData *aTxDoneParams);
-
-/**
- * This function signals that virtual radio is done with the CCA procedure.
- *
- * @param[in]  aInstance     A pointer to the OpenThread instance.
- * @param[in]  aTxDoneParams A pointer to status result of the CCA procedure.
- *
- */
-void platformRadioCcaDone(otInstance *aInstance, struct RadioCommEventData *aChanData);
 
 /**
  * This function sends a generic simulation event to the simulator. Event fields are

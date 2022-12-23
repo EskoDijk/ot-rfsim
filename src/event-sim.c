@@ -32,12 +32,13 @@
  *   This file includes simulation-event message formatting and parsing functions.
  */
 
+#include "platform-rfsim.h"
 #include "event-sim.h"
-#include "platform-simulation.h"
 
+// UDP communication parameters for events
 extern uint16_t sPortOffset;
 extern uint16_t sPortBase;
-extern int      sSockFd;
+extern int      gSockFd;
 
 void otSimSendSleepEvent(void)
 {
@@ -120,7 +121,7 @@ void otSimSendEvent(struct Event *aEvent)
     sockaddr.sin_port = htons(sPortBase + sPortOffset);
 
     // send header and data.
-    rval = sendto(sSockFd, aEvent, offsetof(struct Event, mData) + aEvent->mDataLength, 0, (struct sockaddr *)&sockaddr,
+    rval = sendto(gSockFd, aEvent, offsetof(struct Event, mData) + aEvent->mDataLength, 0, (struct sockaddr *)&sockaddr,
                   sizeof(sockaddr));
 
     if (rval < 0)

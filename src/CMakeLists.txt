@@ -29,22 +29,21 @@
 add_library(openthread-rfsim-config INTERFACE)
 
 add_library(openthread-rfsim
+    alarm.c
     crypto.c
     diag.c
     dso_transport.c
     entropy.c
+    event-sim.c
     flash.c
     infra_if.c
     logging.c
     misc.c
+    platform-rfsim.c
     radio.c
-    spi-stubs.c
     system.c
     trel.c
     uart.c
-    alarm.c
-    platform-sim.c
-    event-sim.c
     $<TARGET_OBJECTS:openthread-platform-utils>
 )
 

@@ -26,7 +26,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "platform-simulation.h"
+#include "platform-rfsim.h"
 
 #include <stdio.h>
 #include <stdlib.h>

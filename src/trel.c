@@ -26,7 +26,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "platform-simulation.h"
+#include "platform-rfsim.h"
 
 #include <openthread/random_noncrypto.h>
 #include <openthread/platform/trel.h>

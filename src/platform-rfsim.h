@@ -29,7 +29,8 @@
 /**
  * @file
  * @brief
- *   This file includes the platform-specific initializers.
+ *   This file includes the platform-specific initializers and all headers for
+ *   platform-specific functions (platform....() ).
  */
 
 #ifndef PLATFORM_SIMULATION_H_
@@ -58,32 +59,12 @@
 
 #include <openthread/instance.h>
 
-#include "openthread-core-config.h"
 #include "platform-config.h"
+#include "event-sim.h"
 
 #define UNDEFINED_TIME_US 0  // an undefined period of time (us) that is > 0
 
-/**
- * The event types defined for communication with a simulator and/or with other simulated nodes.
- * Shared for both 'real' and virtual-time event types.
- */
-enum
-{
-    OT_SIM_EVENT_ALARM_FIRED         = 0,
-    OT_SIM_EVENT_RADIO_RECEIVED      = 1,
-    OT_SIM_EVENT_UART_WRITE          = 2,
-    OT_SIM_EVENT_RADIO_SPINEL_WRITE  = 3,
-    OT_SIM_EVENT_POSTCMD             = 4,
-    OT_SIM_EVENT_OTNS_STATUS_PUSH    = 5,
-    OT_SIM_EVENT_RADIO_COMM_START    = 6,
-    OT_SIM_EVENT_RADIO_TX_DONE       = 7,
-    OT_SIM_EVENT_RADIO_CHAN_SAMPLE   = 8,
-    OT_SIM_EVENT_RADIO_STATE         = 9,
-    OT_SIM_EVENT_RADIO_RX_DONE       = 10,
-};
-
 enum {
-    OT_EVENT_DATA_MAX_SIZE = 1024,
     MAX_NETWORK_SIZE = OPENTHREAD_SIMULATION_MAX_NETWORK_SIZE,
 };
 
@@ -157,17 +138,6 @@ void platformRadioInit(void);
 void platformRadioDeinit(void);
 
 /**
- * This function updates the file descriptor sets with file descriptors used by the radio driver.
- *
- * @param[in,out]  aReadFdSet   A pointer to the read file descriptors.
- * @param[in,out]  aWriteFdSet  A pointer to the write file descriptors.
- * @param[in,out]  aTimeout     A pointer to the timeout.
- * @param[in,out]  aMaxFd       A pointer to the max file descriptor.
- *
- */
-void platformRadioUpdateFdSet(fd_set *aReadFdSet, fd_set *aWriteFdSet, struct timeval *aTimeout, int *aMaxFd);
-
-/**
  * This function performs radio driver processing.
  *
  * @param[in]  aInstance    The OpenThread instance structure.
@@ -182,22 +152,6 @@ void platformRadioProcess(otInstance *aInstance, const fd_set *aReadFdSet, const
  *
  */
 void platformRandomInit(void);
-
-/**
- * This function updates the file descriptor sets with file descriptors used by the UART driver.
- *
- * @param[in,out]  aReadFdSet   A pointer to the read file descriptors.
- * @param[in,out]  aWriteFdSet  A pointer to the write file descriptors.
- * @param[in,out]  aMaxFd       A pointer to the max file descriptor.
- *
- */
-void platformUartUpdateFdSet(fd_set *aReadFdSet, fd_set *aWriteFdSet, fd_set *aErrorFdSet, int *aMaxFd);
-
-/**
- * This function performs radio driver processing.
- *
- */
-void platformUartProcess(void);
 
 /**
  * This function restores the Uart.
@@ -221,16 +175,53 @@ bool platformRadioIsTransmitPending(void);
 void platformRadioReportStateToSimulator(void);
 
 /**
- * This function parses an environment variable as an unsigned 16-bit integer.
+ * This function checks if the radio is busy performing some task such as transmission,
+ * actively receiving a frame, returning an ACK, or doing a CCA. Idle listening (Rx) does
+ * not count as busy.
  *
- * If the environment variable does not exist, this function does nothing.
- * If it is not a valid integer, this function will terminate the process with an error message.
- *
- * @param[in]   aEnvName  The name of the environment variable.
- * @param[out]  aValue    A pointer to the unsigned 16-bit integer.
+ * @returns Whether radio is busy with a task.
  *
  */
-void parseFromEnvAsUint16(const char *aEnvName, uint16_t *aValue);
+bool platformRadioIsBusy(void);
+
+/**
+ * This function signals the start of a received radio frame.
+ *
+ * @param[in]  aInstance   A pointer to the OpenThread instance.
+ * @param[in]  aRxParams   A pointer to parameters related to the reception event.
+ *
+ */
+void platformRadioRxStart(otInstance *aInstance, struct RadioCommEventData *aRxParams);
+
+/**
+ * This function signals the end of a received radio frame and inputs the frame data.
+ *
+ * @param[in]  aInstance   A pointer to the OpenThread instance.
+ * @param[in]  aBuf        A pointer to the received radio frame (struct RadioMessage).
+ * @param[in]  aBufLength  The size of the received radio frame (struct RadioMessage).
+ * @param[in]  aRxParams   A pointer to parameters related to the reception event.
+ *
+ */
+void platformRadioRxDone(otInstance *aInstance, const uint8_t *aBuf, uint16_t aBufLength, struct RadioCommEventData *aRxParams);
+
+/**
+ * This function signals that virtual radio is done transmitting a single frame.
+ *
+ * @param[in]  aInstance     A pointer to the OpenThread instance.
+ * @param[in]  aTxDoneParams A pointer to status parameters for the attempt to transmit the virtual radio frame.
+ *
+ */
+void platformRadioTxDone(otInstance *aInstance, struct RadioCommEventData *aTxDoneParams);
+
+/**
+ * This function signals that virtual radio is done with the CCA procedure.
+ *
+ * @param[in]  aInstance     A pointer to the OpenThread instance.
+ * @param[in]  aTxDoneParams A pointer to status result of the CCA procedure.
+ *
+ */
+void platformRadioCcaDone(otInstance *aInstance, struct RadioCommEventData *aChanData);
+
 
 #if OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
 

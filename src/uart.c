@@ -26,7 +26,14 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "platform-simulation.h"
+/**
+ * @file
+ * @brief
+ *   This file includes platform-specific UART code.
+ */
+
+#include "platform-rfsim.h"
+#include "event-sim.h"
 
 #include <assert.h>
 #include <errno.h>
@@ -43,3 +50,29 @@
 #include "utils/code_utils.h"
 #include "utils/uart.h"
 
+otError otPlatUartEnable(void)
+{
+    return OT_ERROR_NONE;
+}
+
+otError otPlatUartDisable(void)
+{
+    return OT_ERROR_NONE;
+}
+
+otError otPlatUartSend(const uint8_t *aData, uint16_t aLength)
+{
+    otSimSendUartWriteEvent(aData, aLength);
+    otPlatUartSendDone();
+
+    return OT_ERROR_NONE;
+}
+
+otError otPlatUartFlush(void)
+{
+    return OT_ERROR_NONE;
+}
+
+void platformUartRestore(void)
+{
+}

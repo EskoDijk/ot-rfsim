@@ -32,7 +32,7 @@
  *   This file includes the platform-specific initializers and processing functions.
  */
 
-#include "platform-simulation.h"
+#include "platform-rfsim.h"
 #include "event-sim.h"
 
 #include <assert.h>
@@ -42,39 +42,21 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <syslog.h>
 
 #include <openthread/tasklet.h>
 
 #include "utils/uart.h"
 
-uint32_t gNodeId        = 1;
+extern int gSockFd;
+
 uint64_t gLastAlarmEventId = 0;
-
-extern bool          gPlatformPseudoResetWasRequested;
-static volatile bool gTerminate = false;
-
-int    gArgumentsCount = 0;
-char **gArguments      = NULL;
-
-uint64_t sNow = 0; // microseconds
-int      sSockFd;
-uint16_t sPortBase = 9000;
-uint16_t sPortOffset;
-
-static void handleSignal(int aSignal)
-{
-    OT_UNUSED_VARIABLE(aSignal);
-
-    gTerminate = true;
-}
 
 #define VERIFY_EVENT_SIZE(X) assert( (payloadLen >= sizeof(X)) && "received event payload too small" );
 
-static void receiveEvent(otInstance *aInstance)
+void platformReceiveEvent(otInstance *aInstance)
 {
     struct Event event;
-    ssize_t      rval = recvfrom(sSockFd, (char *)&event, sizeof(event), 0, NULL, NULL);
+    ssize_t      rval = recvfrom(gSockFd, (char *)&event, sizeof(event), 0, NULL, NULL);
     const uint8_t *evData = event.mData;
 
     if (rval < 0 || (uint16_t)rval < offsetof(struct Event, mData))
@@ -131,158 +113,6 @@ static void receiveEvent(otInstance *aInstance)
     default:
         assert(false && "Unrecognized event type received");
     }
-}
-
-void platformUartRestore(void)
-{
-}
-
-otError otPlatUartEnable(void)
-{
-    return OT_ERROR_NONE;
-}
-
-otError otPlatUartDisable(void)
-{
-    return OT_ERROR_NONE;
-}
-
-otError otPlatUartSend(const uint8_t *aData, uint16_t aLength)
-{
-    otSimSendUartWriteEvent(aData, aLength);
-    otPlatUartSendDone();
-
-    return OT_ERROR_NONE;
-}
-
-otError otPlatUartFlush(void)
-{
-    return OT_ERROR_NONE;
-}
-
-static void socket_init(void)
-{
-    struct sockaddr_in sockaddr;
-    memset(&sockaddr, 0, sizeof(sockaddr));
-    sockaddr.sin_family = AF_INET;
-
-    parseFromEnvAsUint16("PORT_BASE", &sPortBase);
-
-    parseFromEnvAsUint16("PORT_OFFSET", &sPortOffset);
-    sPortOffset *= (MAX_NETWORK_SIZE + 1);
-
-    sockaddr.sin_port        = htons((uint16_t)(sPortBase + sPortOffset + gNodeId));
-    sockaddr.sin_addr.s_addr = INADDR_ANY;
-
-    sSockFd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-
-    if (sSockFd == -1)
-    {
-        perror("socket");
-        exit(EXIT_FAILURE);
-    }
-
-    if (bind(sSockFd, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) == -1)
-    {
-        perror("bind");
-        exit(EXIT_FAILURE);
-    }
-}
-
-void otSysInit(int argc, char *argv[])
-{
-    char *endptr;
-
-    if (gPlatformPseudoResetWasRequested)
-    {
-        gPlatformPseudoResetWasRequested = false;
-        return;
-    }
-
-    if (argc != 2)
-    {
-        fprintf(stderr, "Usage: %s <nodeNumber>\n", basename(argv[0]));
-        exit(EXIT_FAILURE);
-    }
-
-    openlog(basename(argv[0]), LOG_PID, LOG_USER);
-    setlogmask(setlogmask(0) & LOG_UPTO(LOG_NOTICE));
-
-    gArgumentsCount = argc;
-    gArguments      = argv;
-
-    gNodeId = (uint32_t)strtol(argv[1], &endptr, 0);
-
-    if (*endptr != '\0' || gNodeId < 1 || gNodeId > MAX_NETWORK_SIZE)
-    {
-        fprintf(stderr, "Invalid NodeId: %s (must be 1-%i)\n", argv[1], MAX_NETWORK_SIZE);
-        exit(EXIT_FAILURE);
-    }
-
-    socket_init();
-
-    platformAlarmInit(1);
-    platformRadioInit();
-    platformRandomInit();
-
-    signal(SIGTERM, &handleSignal);
-    signal(SIGHUP, &handleSignal);
-}
-
-bool otSysPseudoResetWasRequested(void)
-{
-    return gPlatformPseudoResetWasRequested;
-}
-
-void otSysDeinit(void)
-{
-    close(sSockFd);
-}
-
-void otSysProcessDrivers(otInstance *aInstance)
-{
-    fd_set read_fds;
-    fd_set write_fds;
-    fd_set error_fds;
-    int    max_fd = -1;
-    int    rval;
-
-    if (gTerminate)
-    {
-        exit(0);
-    }
-
-    FD_ZERO(&read_fds);
-    FD_ZERO(&write_fds);
-    FD_ZERO(&error_fds);
-
-    FD_SET(sSockFd, &read_fds);
-    max_fd = sSockFd;
-
-    if (!otTaskletsArePending(aInstance) && platformAlarmGetNext() > 0 &&
-        (!platformRadioIsTransmitPending() || platformRadioIsBusy()) )
-    {
-        // report my final radio state at end of this time instant, then go to sleep.
-        platformRadioReportStateToSimulator();
-        otSimSendSleepEvent();
-
-        // wake up by reception of UDP event from simulator.
-        rval = select(max_fd + 1, &read_fds, &write_fds, &error_fds, NULL);
-
-        if ((rval < 0) && (errno != EINTR))
-        {
-            perror("select");
-            exit(EXIT_FAILURE);
-        }
-
-        if (rval > 0 && FD_ISSET(sSockFd, &read_fds))
-        {
-            receiveEvent(aInstance);
-        }
-    }
-
-    platformAlarmProcess(aInstance);
-    platformRadioProcess(aInstance, &read_fds, &write_fds);
 }
 
 void otPlatOtnsStatus(const char *aStatus)

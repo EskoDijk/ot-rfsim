@@ -266,6 +266,16 @@
 #endif
 
 /**
+ * @def OPENTHREAD_PLATFORM_USE_PSEUDO_RESET
+ *
+ * Define as 1 to enable pseudo-reset.
+ *
+ */
+#ifndef OPENTHREAD_PLATFORM_USE_PSEUDO_RESET
+#define OPENTHREAD_PLATFORM_USE_PSEUDO_RESET 0
+#endif
+
+/**
  * @def OPENTHREAD_SIMULATION_MAX_NETWORK_SIZE
  *
  * This setting configures the maximum network size in simulation.
@@ -275,7 +285,18 @@
 #define OPENTHREAD_SIMULATION_MAX_NETWORK_SIZE 999
 #endif
 
-// MUST
+/**
+ * @def OPENTHREAD_CONFIG_OTNS_ENABLE
+ *
+ * This setting configures OT-NS simulator support. It MUST be enabled
+ * for the RFSIM platform.
+ *
+ */
+#ifndef OPENTHREAD_CONFIG_OTNS_ENABLE
 #define OPENTHREAD_CONFIG_OTNS_ENABLE 1
+#endif
+#if OPENTHREAD_CONFIG_OTNS_ENABLE==0
+#error "OPENTHREAD_CONFIG_OTNS_ENABLE MUST be '1' for the RFSIM platform"
+#endif
 
 #endif // OPENTHREAD_CORE_SIMULATION_CONFIG_H_

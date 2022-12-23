@@ -32,7 +32,7 @@
  *
  */
 
-#include "platform-simulation.h"
+#include "platform-rfsim.h"
 
 #include <assert.h>
 #include <stdio.h>

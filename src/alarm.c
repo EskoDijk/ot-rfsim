@@ -26,7 +26,7 @@
  *  POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "platform-simulation.h"
+#include "platform-rfsim.h"
 
 #include <stdbool.h>
 #include <stdio.h>
@@ -38,7 +38,7 @@
 
 #define US_PER_MS 1000
 
-extern uint64_t sNow; // microseconds
+static uint64_t sNow = 0; // microseconds
 
 static bool     sIsMsRunning = false;
 static uint32_t sMsAlarm     = 0;
