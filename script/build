@@ -34,16 +34,10 @@ OT_CMAKE_NINJA_TARGET=${OT_CMAKE_NINJA_TARGET:-}
 OT_SRCDIR="$(pwd)"
 readonly OT_SRCDIR
 
+# OpenThread options that are always added to build.
 OT_OPTIONS=(
     "-DCMAKE_BUILD_TYPE=Debug"
     "-DOT_PLATFORM=external"
-    "-DOT_COMMISSIONER=ON"
-    "-DOT_SRP_SERVER=ON"
-    "-DOT_SRP_CLIENT=ON"
-    "-DOT_JOINER=ON"
-    "-DOT_BORDER_ROUTER=ON"
-    "-DOT_SERVICE=ON"
-    "-DOT_COAP=ON"
 )
 readonly OT_OPTIONS
 
@@ -74,7 +68,7 @@ build()
 main()
 {
     local options=()
-    options+=("$@")
+    options+=("$@" "${OT_OPTIONS[@]}")
     build "${options[@]}"
 }
 
