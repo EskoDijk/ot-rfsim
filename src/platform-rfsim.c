@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018-2022, The OpenThread Authors.
+ *  Copyright (c) 2018-2023, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -33,11 +33,8 @@
  */
 
 #include "platform-rfsim.h"
-#include "event-sim.h"
 
 #include <assert.h>
-#include <errno.h>
-#include <libgen.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -45,13 +42,20 @@
 
 #include <openthread/tasklet.h>
 
+#include "event-sim.h"
 #include "utils/uart.h"
+
+#define VERIFY_EVENT_SIZE(X) assert( (payloadLen >= sizeof(X)) && "received event payload too small" );
 
 extern int gSockFd;
 
 uint64_t gLastAlarmEventId = 0;
 
-#define VERIFY_EVENT_SIZE(X) assert( (payloadLen >= sizeof(X)) && "received event payload too small" );
+void platformExit(int exitCode) {
+    otPlatLog(OT_LOG_LEVEL_NOTE,OT_LOG_REGION_PLATFORM,
+              "Exiting with exit code %d.", exitCode);
+    exit(exitCode);
+}
 
 void platformReceiveEvent(otInstance *aInstance)
 {
@@ -62,7 +66,7 @@ void platformReceiveEvent(otInstance *aInstance)
     if (rval < 0 || (uint16_t)rval < offsetof(struct Event, mData))
     {
         perror("recvfrom");
-        exit(EXIT_FAILURE);
+        platformExit(EXIT_FAILURE);
     }
     size_t payloadLen = rval - offsetof(struct Event, mData);
 

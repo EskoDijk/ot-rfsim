@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, The OpenThread Authors.
+ *  Copyright (c) 2016-2023, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -29,60 +29,48 @@
 /**
  * @file
  * @brief
- *   This file includes the platform-specific initializers.
+ *   This file includes the platform-specific OT system initializers and processing.
  */
 
 #include "platform-rfsim.h"
 
-#include <syslog.h>
 #include <errno.h>
 #include <libgen.h>
 
 #include <openthread/tasklet.h>
 
 extern void platformReceiveEvent(otInstance *aInstance);
-extern bool          gPlatformPseudoResetWasRequested;
+extern bool gPlatformPseudoResetWasRequested;
 static void socket_init(void);
 static void handleSignal(int aSignal);
 
-int    gArgumentsCount = 0;
-char **gArguments      = NULL;
 static volatile bool gTerminate = false;
-uint32_t gNodeId        = 1;
-int      gSockFd;
+uint32_t gNodeId = 0;
+int gSockFd;
 uint16_t sPortBase = 9000;
 uint16_t sPortOffset;
 
-
-void otSysInit(int argc, char *argv[])
-{
+void otSysInit(int argc, char *argv[]) {
     char *endptr;
 
-    if (gPlatformPseudoResetWasRequested)
-    {
+    if (gPlatformPseudoResetWasRequested) {
         gPlatformPseudoResetWasRequested = false;
         return;
     }
 
-    if (argc != 2)
-    {
+    if (argc != 2) {
         fprintf(stderr, "Usage: %s <nodeNumber>\n", basename(argv[0]));
-        exit(EXIT_FAILURE);
+        platformExit(EXIT_FAILURE);
     }
 
-    openlog(basename(argv[0]), LOG_PID, LOG_USER);
-    setlogmask(setlogmask(0) & LOG_UPTO(LOG_NOTICE));
+    gNodeId = (uint32_t) strtol(argv[1], &endptr, 0);
 
-    gArgumentsCount = argc;
-    gArguments      = argv;
-
-    gNodeId = (uint32_t)strtol(argv[1], &endptr, 0);
-
-    if (*endptr != '\0' || gNodeId < 1 || gNodeId > MAX_NETWORK_SIZE)
-    {
+    if (*endptr != '\0' || gNodeId < 1 || gNodeId > MAX_NETWORK_SIZE) {
         fprintf(stderr, "Invalid NodeId: %s (must be 1-%i)\n", argv[1], MAX_NETWORK_SIZE);
-        exit(EXIT_FAILURE);
+        platformExit(EXIT_FAILURE);
     }
+
+    platformLoggingInit(argv[0]);
 
     socket_init();
 
@@ -94,27 +82,23 @@ void otSysInit(int argc, char *argv[])
     signal(SIGHUP, &handleSignal);
 }
 
-bool otSysPseudoResetWasRequested(void)
-{
+bool otSysPseudoResetWasRequested(void) {
     return gPlatformPseudoResetWasRequested;
 }
 
-void otSysDeinit(void)
-{
+void otSysDeinit(void) {
     close(gSockFd);
 }
 
-void otSysProcessDrivers(otInstance *aInstance)
-{
+void otSysProcessDrivers(otInstance *aInstance) {
     fd_set read_fds;
     fd_set write_fds;
     fd_set error_fds;
-    int    max_fd = -1;
-    int    rval;
+    int max_fd;
+    int rval;
 
-    if (gTerminate)
-    {
-        exit(0);
+    if (gTerminate) {
+        platformExit(EXIT_SUCCESS);
     }
 
     FD_ZERO(&read_fds);
@@ -125,8 +109,7 @@ void otSysProcessDrivers(otInstance *aInstance)
     max_fd = gSockFd;
 
     if (!otTaskletsArePending(aInstance) && platformAlarmGetNext() > 0 &&
-        (!platformRadioIsTransmitPending() || platformRadioIsBusy()) )
-    {
+        (!platformRadioIsTransmitPending() || platformRadioIsBusy())) {
         // report my final radio state at end of this time instant, then go to sleep.
         platformRadioReportStateToSimulator();
         otSimSendSleepEvent();
@@ -134,14 +117,12 @@ void otSysProcessDrivers(otInstance *aInstance)
         // wake up by reception of UDP event from simulator.
         rval = select(max_fd + 1, &read_fds, &write_fds, &error_fds, NULL);
 
-        if ((rval < 0) && (errno != EINTR))
-        {
+        if ((rval < 0) && (errno != EINTR)) {
             perror("select");
-            exit(EXIT_FAILURE);
+            platformExit(EXIT_FAILURE);
         }
 
-        if (rval > 0 && FD_ISSET(gSockFd, &read_fds))
-        {
+        if (rval > 0 && FD_ISSET(gSockFd, &read_fds)) {
             platformReceiveEvent(aInstance);
         }
     }
@@ -151,35 +132,35 @@ void otSysProcessDrivers(otInstance *aInstance)
 }
 
 /**
- * This function parses an environment variable as an unsigned 16-bit integer.
- *
- * If the environment variable does not exist, this function does nothing.
- * If it is not a valid integer, this function will terminate the process with an error message.
- *
- * @param[in]   aEnvName  The name of the environment variable.
- * @param[out]  aValue    A pointer to the unsigned 16-bit integer.
- *
- */
-static void parseFromEnvAsUint16(const char *aEnvName, uint16_t *aValue)
-{
+* This function parses an environment variable as an unsigned 16-bit integer.
+*
+* If the environment variable does not exist, this function does nothing.
+* If it is not a valid integer, this function will terminate the process with an error message.
+*
+* @param[in]   aEnvName  The name of the environment variable.
+* @param[out]  aValue    A pointer to the unsigned 16-bit integer.
+*
+*/
+static void parseFromEnvAsUint16(const char *aEnvName, uint16_t *aValue) {
     char *env = getenv(aEnvName);
 
-    if (env)
-    {
+    if (env) {
         char *endptr;
 
-        *aValue = (uint16_t)strtol(env, &endptr, 0);
+        *aValue = (uint16_t) strtol(env, &endptr, 0);
 
-        if (*endptr != '\0')
-        {
+        if (*endptr != '\0') {
             fprintf(stderr, "Invalid %s: %s\n", aEnvName, env);
-            exit(EXIT_FAILURE);
+            platformExit(EXIT_FAILURE);
         }
     }
 }
 
-static void socket_init(void)
-{
+/**
+ * This function initialises the UDP socket used for communication with the simulator.
+ * The port number is calculated based on environment vars (if set) or else defaults.
+ */
+static void socket_init(void) {
     struct sockaddr_in sockaddr;
     memset(&sockaddr, 0, sizeof(sockaddr));
     sockaddr.sin_family = AF_INET;
@@ -189,26 +170,23 @@ static void socket_init(void)
     parseFromEnvAsUint16("PORT_OFFSET", &sPortOffset);
     sPortOffset *= (MAX_NETWORK_SIZE + 1);
 
-    sockaddr.sin_port        = htons((uint16_t)(sPortBase + sPortOffset + gNodeId));
+    sockaddr.sin_port = htons((uint16_t) (sPortBase + sPortOffset + gNodeId));
     sockaddr.sin_addr.s_addr = INADDR_ANY;
 
     gSockFd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
 
-    if (gSockFd == -1)
-    {
+    if (gSockFd == -1) {
         perror("socket");
-        exit(EXIT_FAILURE);
+        platformExit(EXIT_FAILURE);
     }
 
-    if (bind(gSockFd, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) == -1)
-    {
+    if (bind(gSockFd, (struct sockaddr *) &sockaddr, sizeof(sockaddr)) == -1) {
         perror("bind");
-        exit(EXIT_FAILURE);
+        platformExit(EXIT_FAILURE);
     }
 }
 
-static void handleSignal(int aSignal)
-{
+static void handleSignal(int aSignal) {
     OT_UNUSED_VARIABLE(aSignal);
 
     gTerminate = true;

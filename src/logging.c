@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, The OpenThread Authors.
+ *  Copyright (c) 2016-2023, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -30,35 +30,64 @@
 #include <openthread-core-config.h>
 #include <openthread/config.h>
 
-#include <ctype.h>
-#include <inttypes.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <string.h>
 #include <syslog.h>
+#include <libgen.h>
 
 #include <openthread/platform/logging.h>
 #include <openthread/platform/toolchain.h>
 
-#include "utils/code_utils.h"
-
 #if (OPENTHREAD_CONFIG_LOG_OUTPUT == OPENTHREAD_CONFIG_LOG_OUTPUT_PLATFORM_DEFINED)
+
+// specify up to which syslog log level message will still be handled. Normally we rely on log messages being sent
+// over the virtual-UART to the simulator; so we don't need everything to go to syslog.
+#define SYSLOG_LEVEL LOG_NOTICE
+
+static int convertOtLogLevelToSyslogLevel(otLogLevel otLevel);
+
+void platformLoggingInit(char *processName){
+    openlog(basename(processName), LOG_PID, LOG_USER);
+    setlogmask(setlogmask(0) & LOG_UPTO(SYSLOG_LEVEL));
+    syslog(LOG_NOTICE, "Started process for ot-rfsim node ID: %d", gNodeId);
+}
+
 OT_TOOL_WEAK void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aFormat, ...)
 {
-    OT_UNUSED_VARIABLE(aLogLevel);
     OT_UNUSED_VARIABLE(aLogRegion);
 
     char    logString[512];
-    int     offset;
+    int     strLen;
     va_list args;
 
-    offset = snprintf(logString, sizeof(logString), "[%d]", gNodeId);
-
     va_start(args, aFormat);
-    vsnprintf(&logString[offset], sizeof(logString) - (uint16_t)offset, aFormat, args);
+    strLen = vsnprintf(&logString[0], sizeof(logString) - 2, aFormat, args);
     va_end(args);
+    assert(strLen >= 0);
 
-    syslog(LOG_CRIT, "%s", logString);
+    syslog(convertOtLogLevelToSyslogLevel(aLogLevel), "%s", logString);
+
+    // extend logString with newline, and then log this string to virtual UART.
+    logString[strLen] = '\n';
+    logString[strLen + 1] = '\0';
+    otSimSendUartWriteEvent((const uint8_t *) &logString[0], strLen + 1);
+}
+
+int convertOtLogLevelToSyslogLevel(otLogLevel otLevel) {
+    switch(otLevel){
+        case OT_LOG_LEVEL_CRIT:
+            return LOG_CRIT;
+        case OT_LOG_LEVEL_WARN:
+            return LOG_WARNING;
+        case OT_LOG_LEVEL_NOTE:
+            return LOG_NOTICE;
+        case OT_LOG_LEVEL_INFO:
+            return LOG_INFO;
+        case OT_LOG_LEVEL_DEBG:
+            return LOG_DEBUG;
+        default:
+            return LOG_CRIT;
+    }
 }
 #endif

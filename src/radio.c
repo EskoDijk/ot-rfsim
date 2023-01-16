@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-2022, The OpenThread Authors.
+ *  Copyright (c) 2016-2023, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -28,7 +28,6 @@
 
 #include "platform-rfsim.h"
 #include "radio.h"
-#include "event-sim.h"
 
 #include <sys/time.h>
 #include <stdio.h>
@@ -40,8 +39,7 @@
 #include "utils/code_utils.h"
 #include "utils/mac_frame.h"
 #include "utils/soft_source_match_table.h"
-
-#define FAILSAFE_TIME_US 4
+#include "event-sim.h"
 
 // declaration of radio functions
 static void setRadioSubState(RadioSubState aState, uint64_t timeToRemainInState);

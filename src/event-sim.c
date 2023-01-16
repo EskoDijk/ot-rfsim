@@ -127,6 +127,6 @@ void otSimSendEvent(struct Event *aEvent)
     if (rval < 0)
     {
         perror("sendto");
-        exit(EXIT_FAILURE);
+        platformExit(EXIT_FAILURE);
     }
 }
