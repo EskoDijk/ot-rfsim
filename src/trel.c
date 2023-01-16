@@ -173,7 +173,7 @@ static void initFds(void)
 exit:
     if (sRxFd == -1 || sTxFd == -1)
     {
-        exit(EXIT_FAILURE);
+        platformExit(EXIT_FAILURE);
     }
 }
 
@@ -220,7 +220,7 @@ static void sendPendingTxMessages(void)
         if (rval < 0)
         {
             perror("sendto(sTxFd)");
-            exit(EXIT_FAILURE);
+            platformExit(EXIT_FAILURE);
         }
     }
 
@@ -408,7 +408,7 @@ void platformTrelInit(uint32_t aSpeedUpFactor)
         if (*endptr != '\0')
         {
             fprintf(stderr, "\r\nInvalid PORT_OFFSET: %s\r\n", str);
-            exit(EXIT_FAILURE);
+            platformExit(EXIT_FAILURE);
         }
 
         sPortOffset *= (MAX_NETWORK_SIZE + 1);
@@ -469,7 +469,7 @@ void platformTrelProcess(otInstance *aInstance, const fd_set *aReadFdSet, const 
         if (rval < 0)
         {
             perror("recvfrom(sRxFd)");
-            exit(EXIT_FAILURE);
+            platformExit(EXIT_FAILURE);
         }
 
         processMessage(aInstance, &message, (uint16_t)(rval));

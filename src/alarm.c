@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018, The OpenThread Authors.
+ *  Copyright (c) 2018-2023, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -29,12 +29,9 @@
 #include "platform-rfsim.h"
 
 #include <stdbool.h>
-#include <stdio.h>
-#include <string.h>
 
 #include <openthread/platform/alarm-micro.h>
 #include <openthread/platform/alarm-milli.h>
-#include <openthread/platform/diag.h>
 
 #define US_PER_MS 1000
 

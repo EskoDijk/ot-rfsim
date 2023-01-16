@@ -132,12 +132,6 @@ void platformAlarmAdvanceNow(uint64_t aDelta);
 void platformRadioInit(void);
 
 /**
- * This function shuts down the radio service used by OpenThread.
- *
- */
-void platformRadioDeinit(void);
-
-/**
  * This function performs radio driver processing.
  *
  * @param[in]  aInstance    The OpenThread instance structure.
@@ -154,10 +148,23 @@ void platformRadioProcess(otInstance *aInstance, const fd_set *aReadFdSet, const
 void platformRandomInit(void);
 
 /**
+ * This function initializes the logging service of the platform, used by OpenThread.
+ *
+ */
+void platformLoggingInit(char *processName);
+
+/**
  * This function restores the Uart.
  *
  */
 void platformUartRestore(void);
+
+/**
+ * This function exits the simulated-node's process with the specific exit code.
+ *
+ * @param exitCode  The exit code (status) to end the program with: EXIT_FAILURE or EXIT_SUCCESS.
+ */
+void platformExit(int exitCode);
 
 /**
  * This function checks if radio needs to transmit a pending MAC (data) frame.
@@ -221,7 +228,6 @@ void platformRadioTxDone(otInstance *aInstance, struct RadioCommEventData *aTxDo
  *
  */
 void platformRadioCcaDone(otInstance *aInstance, struct RadioCommEventData *aChanData);
-
 
 #if OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
 

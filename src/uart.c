@@ -33,21 +33,8 @@
  */
 
 #include "platform-rfsim.h"
+
 #include "event-sim.h"
-
-#include <assert.h>
-#include <errno.h>
-#include <fcntl.h>
-#include <poll.h>
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <termios.h>
-#include <unistd.h>
-
-#include <openthread/platform/debug_uart.h>
-
-#include "utils/code_utils.h"
 #include "utils/uart.h"
 
 otError otPlatUartEnable(void)

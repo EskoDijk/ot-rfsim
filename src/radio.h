@@ -31,30 +31,24 @@
 
 #include <openthread/platform/radio.h>
 
-// The IPv4 group for receiving packets of radio simulation
-#define OT_RADIO_GROUP "224.0.0.116"
-
-#define MS_PER_S 1000
-#define US_PER_MS 1000
-
 #define FAILSAFE_TIME_US 4
 
 enum
 {
-    SIM_RECEIVE_SENSITIVITY_DBM        = -100, // dBm
-    SIM_CCA_ED_THRESHOLD_DEFAULT_DBM   = SIM_RECEIVE_SENSITIVITY_DBM + 9,  // dBm, mandatory < 10 dB above
-    SIM_TX_POWER_DEFAULT_DBM           = 0,    // dBm
-    kMinChannel                        = OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN,
-    kMaxChannel                        = OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX,
-    OT_RADIO_LIFS_TIME_US              = 40 * OT_RADIO_SYMBOL_TIME,
-    OT_RADIO_SIFS_TIME_US              = 12 * OT_RADIO_SYMBOL_TIME,
-    OT_RADIO_AIFS_TIME_US              = 12 * OT_RADIO_SYMBOL_TIME,
-    OT_RADIO_CCA_TIME_US               = 8 * OT_RADIO_SYMBOL_TIME,
-    OT_RADIO_TURNAROUND_TIME_US        = 40, // actual turnaround-time: may differ per radio model.
-    OT_RADIO_MAX_TURNAROUND_TIME_US    = 12 * OT_RADIO_SYMBOL_TIME,
-    OT_RADIO_MAX_ACK_WAIT_US           = (OT_RADIO_AIFS_TIME_US + (10 * OT_RADIO_SYMBOL_TIME)),
-    OT_RADIO_aMaxSifsFrameSize         = 18,
-    OT_RADIO_STARTUP_TIME_US           = OT_RADIO_LIFS_TIME_US, // TODO check typical values.
+    SIM_RECEIVE_SENSITIVITY_DBM      = -100,                              // dBm
+    SIM_CCA_ED_THRESHOLD_DEFAULT_DBM = SIM_RECEIVE_SENSITIVITY_DBM + 9,   // dBm, mandatory < 10 dB above rx sensitivity
+    SIM_TX_POWER_DEFAULT_DBM         = 0,                                 // dBm
+    kMinChannel                      = OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN,
+    kMaxChannel                      = OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX,
+    OT_RADIO_LIFS_TIME_US            = 40 * OT_RADIO_SYMBOL_TIME,
+    OT_RADIO_SIFS_TIME_US            = 12 * OT_RADIO_SYMBOL_TIME,
+    OT_RADIO_AIFS_TIME_US            = 12 * OT_RADIO_SYMBOL_TIME,
+    OT_RADIO_CCA_TIME_US             = 8 * OT_RADIO_SYMBOL_TIME,
+    OT_RADIO_TURNAROUND_TIME_US      = 40,                                // radio's turnaround: differs per radio model
+    OT_RADIO_MAX_TURNAROUND_TIME_US  = 12 * OT_RADIO_SYMBOL_TIME,         // specified max turnaround time.
+    OT_RADIO_MAX_ACK_WAIT_US         = (OT_RADIO_AIFS_TIME_US + (10 * OT_RADIO_SYMBOL_TIME)),
+    OT_RADIO_aMaxSifsFrameSize       = 18,
+    OT_RADIO_STARTUP_TIME_US         = OT_RADIO_LIFS_TIME_US,             // TODO check typical values.
 };
 
 OT_TOOL_PACKED_BEGIN
