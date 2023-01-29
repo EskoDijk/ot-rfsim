@@ -1,5 +1,5 @@
 /*
-*  Copyright (c) 2020-2022, The OpenThread Authors.
+*  Copyright (c) 2020-2023, The OpenThread Authors.
 *  All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
@@ -84,6 +84,13 @@ struct RadioStateEventData
     uint8_t  mSubState;
     uint8_t  mState; // OT state of radio (disabled, sleep, Tx, Rx)
 } OT_TOOL_PACKED_END;
+
+/**
+ * This function tests if the socket connection to the simulator is currently open.
+ *
+ * @return true if open/initialized, false otherwise.
+ */
+bool otSimEventSocketOpen(void);
 
 /**
  * This function sends a generic simulation event to the simulator. Event fields are

@@ -27,6 +27,7 @@
  */
 
 #include "platform-rfsim.h"
+
 #include <openthread-core-config.h>
 #include <openthread/config.h>
 
@@ -43,6 +44,7 @@
 
 // specify up to which syslog log level message will still be handled. Normally we rely on log messages being sent
 // over the virtual-UART to the simulator; so we don't need everything to go to syslog.
+//#define SYSLOG_LEVEL LOG_DEBUG   // in case of debugging via syslog
 #define SYSLOG_LEVEL LOG_NOTICE
 
 static int convertOtLogLevelToSyslogLevel(otLogLevel otLevel);
@@ -50,7 +52,7 @@ static int convertOtLogLevelToSyslogLevel(otLogLevel otLevel);
 void platformLoggingInit(char *processName){
     openlog(basename(processName), LOG_PID, LOG_USER);
     setlogmask(setlogmask(0) & LOG_UPTO(SYSLOG_LEVEL));
-    syslog(LOG_NOTICE, "Started process for ot-rfsim node ID: %d", gNodeId);
+    syslog(LOG_NOTICE, "Started process for ot-rfsim node.");
 }
 
 OT_TOOL_WEAK void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const char *aFormat, ...)
@@ -68,10 +70,12 @@ OT_TOOL_WEAK void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const 
 
     syslog(convertOtLogLevelToSyslogLevel(aLogLevel), "%s", logString);
 
-    // extend logString with newline, and then log this string to virtual UART.
-    logString[strLen] = '\n';
-    logString[strLen + 1] = '\0';
-    otSimSendUartWriteEvent((const uint8_t *) &logString[0], strLen + 1);
+    if (otSimEventSocketOpen()) {
+        // extend logString with newline, and then log this string to virtual UART.
+        logString[strLen] = '\n';
+        logString[strLen + 1] = '\0';
+        otSimSendUartWriteEvent((const uint8_t *) &logString[0], strLen + 1);
+    }
 }
 
 int convertOtLogLevelToSyslogLevel(otLogLevel otLevel) {

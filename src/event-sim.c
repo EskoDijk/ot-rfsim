@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2022, The OpenThread Authors.
+ *  Copyright (c) 2022-2023, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -36,9 +36,13 @@
 #include "event-sim.h"
 
 // UDP communication parameters for events
-extern uint16_t sPortOffset;
-extern uint16_t sPortBase;
-extern int      gSockFd;
+//extern uint16_t gPortOffset;
+//extern uint16_t gPortBase;
+//extern int      gSockFd;
+
+bool otSimEventSocketOpen(void) {
+    return gSockFd >= 0;
+}
 
 void otSimSendSleepEvent(void)
 {
@@ -118,7 +122,7 @@ void otSimSendEvent(struct Event *aEvent)
     memset(&sockaddr, 0, sizeof(sockaddr));
     sockaddr.sin_family = AF_INET;
     inet_pton(AF_INET, "127.0.0.1", &sockaddr.sin_addr);
-    sockaddr.sin_port = htons(sPortBase + sPortOffset);
+    sockaddr.sin_port = htons(gPortBase + gPortOffset);
 
     // send header and data.
     rval = sendto(gSockFd, aEvent, offsetof(struct Event, mData) + aEvent->mDataLength, 0, (struct sockaddr *)&sockaddr,

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, The OpenThread Authors.
+ *  Copyright (c) 2016-2023, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -37,9 +37,9 @@
 
 extern jmp_buf gResetJump;
 
-static otPlatResetReason   sPlatResetReason = OT_PLAT_RESET_REASON_POWER_ON;
+static otPlatResetReason   sPlatResetReason   = OT_PLAT_RESET_REASON_POWER_ON;
+static otPlatMcuPowerState sPlatMcuPowerState = OT_PLAT_MCU_POWER_STATE_ON;
 bool                       gPlatformPseudoResetWasRequested;
-static otPlatMcuPowerState gPlatMcuPowerState = OT_PLAT_MCU_POWER_STATE_ON;
 
 void otPlatReset(otInstance *aInstance)
 {
@@ -82,7 +82,7 @@ otError otPlatSetMcuPowerState(otInstance *aInstance, otPlatMcuPowerState aState
     {
     case OT_PLAT_MCU_POWER_STATE_ON:
     case OT_PLAT_MCU_POWER_STATE_LOW_POWER:
-        gPlatMcuPowerState = aState;
+        sPlatMcuPowerState = aState;
         break;
 
     default:
@@ -97,5 +97,5 @@ otPlatMcuPowerState otPlatGetMcuPowerState(otInstance *aInstance)
 {
     OT_UNUSED_VARIABLE(aInstance);
 
-    return gPlatMcuPowerState;
+    return sPlatMcuPowerState;
 }

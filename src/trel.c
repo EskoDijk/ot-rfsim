@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2019-21, The OpenThread Authors.
+ *  Copyright (c) 2019-2023, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -69,7 +69,6 @@ static Message sPendingTx[TREL_MAX_PENDING_TX];
 
 static int      sTxFd       = -1;
 static int      sRxFd       = -1;
-static uint16_t sPortOffset = 0;
 static bool     sEnabled    = false;
 static uint16_t sUdpPort;
 
@@ -127,7 +126,7 @@ static void initFds(void)
 
     otEXPECT_ACTION((fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP)) != -1, perror("socket(sTxFd)"));
 
-    sUdpPort                 = (uint16_t)(TREL_SIM_PORT + sPortOffset + gNodeId);
+    sUdpPort                 = (uint16_t)(TREL_SIM_PORT + gPortOffset + gNodeId);
     sockaddr.sin_family      = AF_INET;
     sockaddr.sin_port        = htons(sUdpPort);
     sockaddr.sin_addr.s_addr = inet_addr("127.0.0.1");
@@ -162,7 +161,7 @@ static void initFds(void)
                     perror("setsockopt(sRxFd, IP_ADD_MEMBERSHIP)"));
 
     sockaddr.sin_family      = AF_INET;
-    sockaddr.sin_port        = htons((uint16_t)(TREL_SIM_PORT + sPortOffset));
+    sockaddr.sin_port        = htons((uint16_t)(TREL_SIM_PORT + gPortOffset));
     sockaddr.sin_addr.s_addr = inet_addr(TREL_SIM_GROUP);
 
     otEXPECT_ACTION(bind(fd, (struct sockaddr *)&sockaddr, sizeof(sockaddr)) != -1, perror("bind(sRxFd)"));
@@ -204,7 +203,7 @@ static void sendPendingTxMessages(void)
     sockaddr.sin_family = AF_INET;
     inet_pton(AF_INET, TREL_SIM_GROUP, &sockaddr.sin_addr);
 
-    sockaddr.sin_port = htons((uint16_t)(TREL_SIM_PORT + sPortOffset));
+    sockaddr.sin_port = htons((uint16_t)(TREL_SIM_PORT + gPortOffset));
 
     for (uint8_t i = 0; i < sNumPendingTx; i++)
     {
@@ -403,7 +402,7 @@ void platformTrelInit(uint32_t aSpeedUpFactor)
     {
         char *endptr;
 
-        sPortOffset = (uint16_t)strtol(str, &endptr, 0);
+        gPortOffset = (uint16_t)strtol(str, &endptr, 0);
 
         if (*endptr != '\0')
         {
@@ -411,7 +410,7 @@ void platformTrelInit(uint32_t aSpeedUpFactor)
             platformExit(EXIT_FAILURE);
         }
 
-        sPortOffset *= (MAX_NETWORK_SIZE + 1);
+        gPortOffset *= (MAX_NETWORK_SIZE + 1);
     }
 
     initFds();

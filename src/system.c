@@ -44,11 +44,11 @@ extern bool gPlatformPseudoResetWasRequested;
 static void socket_init(void);
 static void handleSignal(int aSignal);
 
-static volatile bool gTerminate = false;
-uint32_t gNodeId = 0;
-int gSockFd;
-uint16_t sPortBase = 9000;
-uint16_t sPortOffset;
+static volatile bool sTerminate = false;
+int      gSockFd     = -1;
+uint32_t gNodeId     = 0;
+uint16_t gPortBase   = DEFAULT_PORT_BASE;
+uint16_t gPortOffset = DEFAULT_PORT_OFFSET;
 
 void otSysInit(int argc, char *argv[]) {
     char *endptr;
@@ -57,6 +57,8 @@ void otSysInit(int argc, char *argv[]) {
         gPlatformPseudoResetWasRequested = false;
         return;
     }
+
+    platformLoggingInit(argv[0]);
 
     if (argc != 2) {
         fprintf(stderr, "Usage: %s <nodeNumber>\n", basename(argv[0]));
@@ -70,7 +72,7 @@ void otSysInit(int argc, char *argv[]) {
         platformExit(EXIT_FAILURE);
     }
 
-    platformLoggingInit(argv[0]);
+    otPlatLog(OT_LOG_LEVEL_NOTE, OT_LOG_REGION_PLATFORM, "Configured Node ID: %i", gNodeId);
 
     socket_init();
 
@@ -88,6 +90,7 @@ bool otSysPseudoResetWasRequested(void) {
 
 void otSysDeinit(void) {
     close(gSockFd);
+    gSockFd = -1;
 }
 
 void otSysProcessDrivers(otInstance *aInstance) {
@@ -97,7 +100,7 @@ void otSysProcessDrivers(otInstance *aInstance) {
     int max_fd;
     int rval;
 
-    if (gTerminate) {
+    if (sTerminate) {
         platformExit(EXIT_SUCCESS);
     }
 
@@ -165,12 +168,12 @@ static void socket_init(void) {
     memset(&sockaddr, 0, sizeof(sockaddr));
     sockaddr.sin_family = AF_INET;
 
-    parseFromEnvAsUint16("PORT_BASE", &sPortBase);
+    parseFromEnvAsUint16("PORT_BASE", &gPortBase);
 
-    parseFromEnvAsUint16("PORT_OFFSET", &sPortOffset);
-    sPortOffset *= (MAX_NETWORK_SIZE + 1);
+    parseFromEnvAsUint16("PORT_OFFSET", &gPortOffset);
+    gPortOffset *= (MAX_NETWORK_SIZE + 1);
 
-    sockaddr.sin_port = htons((uint16_t) (sPortBase + sPortOffset + gNodeId));
+    sockaddr.sin_port = htons((uint16_t) (gPortBase + gPortOffset + gNodeId));
     sockaddr.sin_addr.s_addr = INADDR_ANY;
 
     gSockFd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
@@ -189,5 +192,5 @@ static void socket_init(void) {
 static void handleSignal(int aSignal) {
     OT_UNUSED_VARIABLE(aSignal);
 
-    gTerminate = true;
+    sTerminate = true;
 }

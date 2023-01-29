@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-2022, The OpenThread Authors.
+ *  Copyright (c) 2016-2023, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -62,7 +62,9 @@
 #include "platform-config.h"
 #include "event-sim.h"
 
-#define UNDEFINED_TIME_US 0  // an undefined period of time (us) that is > 0
+#define UNDEFINED_TIME_US 0             // an undefined period of time (us) that is > 0
+#define DEFAULT_PORT_BASE 9000          // default UDP port number offset to base node's UDP port on.
+#define DEFAULT_PORT_OFFSET 0           // default 0. Non-zero used for multiple simulations run at same time.
 
 enum {
     MAX_NETWORK_SIZE = OPENTHREAD_SIMULATION_MAX_NETWORK_SIZE,
@@ -70,9 +72,30 @@ enum {
 
 /**
  * Unique node ID.
- *
  */
 extern uint32_t gNodeId;
+
+/**
+ * File Descriptor for UDP socket used to communicate with simulator.
+ */
+extern int gSockFd;
+
+/**
+ * Base UDP port number for socket used to communicate with simulator.
+ */
+extern uint16_t gPortBase;
+
+/**
+ * Port offset integer (0, 1, 2, 3, ...) to denote which range of UDP ports is used by
+ * the current simulated node. Normally, it is 0. When running multiple simulator instances
+ * at the same time, non-zero offset has to be used.
+ */
+extern uint16_t gPortOffset;
+
+/**
+ * Tracks whether pseudo-reset of node was requested (see misc.c)
+ */
+extern bool gPlatformPseudoResetWasRequested;
 
 /**
  * ID of last received Alarm event from simulator, or 0 if no ID yet received.
