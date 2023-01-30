@@ -1,5 +1,5 @@
 /*
-*  Copyright (c) 2020-2022, The OpenThread Authors.
+*  Copyright (c) 2020-2023, The OpenThread Authors.
 *  All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
@@ -36,6 +36,9 @@
 #ifndef PLATFORM_SIMULATION_EVENT_SIM_H
 #define PLATFORM_SIMULATION_EVENT_SIM_H
 
+#include "platform-rfsim.h"
+#include "radio.h"
+
 /**
  * The event types defined for communication with a simulator and/or with other simulated nodes.
  * Shared for both 'real' and virtual-time event types.
@@ -53,6 +56,7 @@ enum
     OT_SIM_EVENT_RADIO_CHAN_SAMPLE   = 8,
     OT_SIM_EVENT_RADIO_STATE         = 9,
     OT_SIM_EVENT_RADIO_RX_DONE       = 10,
+    OT_SIM_EVENT_EXT_ADDR            = 11,
 };
 
 #define OT_EVENT_DATA_MAX_SIZE 1024
@@ -143,5 +147,14 @@ void otSimSendUartWriteEvent(const uint8_t *aData, uint16_t aLength);
  *
  */
 void otSimSendOtnsStatusPushEvent(const char *aStatus, uint16_t aLength);
+
+/**
+ * This function send Extended Address change event to the simulator.
+ * It differs from an OTNS Status Push 'extaddr' event in being not
+ * encoded as a string, but binary.
+ *
+ * @param aExtAddress    The (new) Extended Address of the node.
+ */
+void otSimSendExtAddrEvent(const otExtAddress *aExtAddress);
 
 #endif // PLATFORM_SIMULATION_EVENT_SIM_H

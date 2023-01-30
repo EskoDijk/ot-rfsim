@@ -35,6 +35,7 @@
 #include <openthread/platform/alarm-milli.h>
 #include <openthread/platform/radio.h>
 #include <openthread/platform/time.h>
+#include <openthread/platform/otns.h>
 
 #include "utils/code_utils.h"
 #include "utils/mac_frame.h"
@@ -226,6 +227,11 @@ void otPlatRadioSetExtendedAddress(otInstance *aInstance, const otExtAddress *aE
     assert(aInstance != NULL);
 
     ReverseExtAddress(&sExtAddress, aExtAddress);
+
+    // FIXME enable the below line in case of an RCP. Since the RCP doesn't emit particular OTNS status push
+    // events, it has to be done by the platform here.
+    //otSimSendExtAddrEvent(&sExtAddress);
+
 }
 
 void otPlatRadioSetShortAddress(otInstance *aInstance, otShortAddress aShortAddress)

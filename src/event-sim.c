@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2022, The OpenThread Authors.
+ *  Copyright (c) 2022-2023, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -107,6 +107,17 @@ void otSimSendOtnsStatusPushEvent(const char *aStatus, uint16_t aLength) {
     event.mEvent      = OT_SIM_EVENT_OTNS_STATUS_PUSH;
     event.mDelay      = 0;
     event.mDataLength = aLength;
+
+    otSimSendEvent(&event);
+}
+
+void otSimSendExtAddrEvent(const otExtAddress *aExtAddress) {
+    struct Event event;
+
+    memcpy(event.mData, aExtAddress, sizeof(otExtAddress));
+    event.mEvent      = OT_SIM_EVENT_EXT_ADDR;
+    event.mDelay      = 0;
+    event.mDataLength = sizeof(otExtAddress);
 
     otSimSendEvent(&event);
 }
