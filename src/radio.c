@@ -271,7 +271,7 @@ void platformRadioInit(void)
     sReceiveFrame.mInfo.mRxInfo.mRssi = OT_RADIO_RSSI_INVALID;
 
 #if OPENTHREAD_CONFIG_MLE_LINK_METRICS_SUBJECT_ENABLE
-    otLinkMetricsInit(SIM_RECEIVE_SENSITIVITY);
+    otLinkMetricsInit(SIM_RECEIVE_SENSITIVITY_DBM);
 #endif
 }
 
