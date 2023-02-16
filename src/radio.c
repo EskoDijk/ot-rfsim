@@ -958,7 +958,7 @@ void radioTransmit(struct RadioMessage *aMessage, const struct otRadioFrame *aFr
     sLastTxEventData.mError    = OT_ERROR_NONE;
     sLastTxEventData.mDuration = frameDurationUs;
 
-    otSimSendRadioCommEvent(&sLastTxEventData, (const uint8_t*) aMessage, aFrame->mLength);
+    otSimSendRadioCommEvent(&sLastTxEventData, (const uint8_t*) aMessage, aFrame->mLength + offsetof(struct RadioMessage, mPsdu));
 }
 
 void radioReceive(otInstance *aInstance, otError aError)
@@ -1132,7 +1132,7 @@ void platformRadioRxDone(otInstance *aInstance, const uint8_t *aBuf, uint16_t aB
     otEXPECT( sSubState == OT_RADIO_SUBSTATE_RX_FRAME_ONGOING || sSubState == OT_RADIO_SUBSTATE_TX_ACK_RX_ONGOING );
     memcpy(&sReceiveMessage, aBuf, aBufLength);
 
-    sReceiveFrame.mLength             = (uint8_t) aBufLength; // TODO check why not -1 here.
+    sReceiveFrame.mLength             = (uint8_t) aBufLength - offsetof(struct RadioMessage, mPsdu);
     sReceiveFrame.mInfo.mRxInfo.mRssi = aRxParams->mPower;
     sReceiveFrame.mInfo.mRxInfo.mLqi  = OT_RADIO_LQI_NONE; // No support of LQI reporting.
 
