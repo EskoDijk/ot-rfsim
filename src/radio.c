@@ -32,6 +32,8 @@
 #include <sys/time.h>
 #include <stdio.h>
 
+#include <openthread/link.h>
+#include <openthread/platform/alarm-micro.h>
 #include <openthread/platform/alarm-milli.h>
 #include <openthread/platform/radio.h>
 #include <openthread/platform/time.h>
