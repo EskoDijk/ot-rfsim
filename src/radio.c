@@ -864,14 +864,23 @@ void otPlatRadioUpdateCslSampleTime(otInstance *aInstance, uint32_t aCslSampleTi
 
     sCslSampleTime = aCslSampleTime;
 }
+#endif // OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
 
 uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
 {
     OT_UNUSED_VARIABLE(aInstance);
 
-    return 0;
+    return SIM_CSL_ACCURACY_PPM;
 }
-#endif // OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
+
+#if OPENTHREAD_CONFIG_MAC_CSL_TRANSMITTER_ENABLE
+uint8_t otPlatRadioGetCslUncertainty(otInstance *aInstance)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+
+    return SIM_CSL_UNCERTAINTY_10US;
+}
+#endif // OPENTHREAD_CONFIG_MAC_CSL_TRANSMITTER_ENABLE
 
 void otPlatRadioSetMacKey(otInstance *            aInstance,
                           uint8_t                 aKeyIdMode,
