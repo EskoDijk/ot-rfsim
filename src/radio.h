@@ -1,5 +1,5 @@
 /*
-*  Copyright (c) 2016-2022, The OpenThread Authors.
+*  Copyright (c) 2016-2023, The OpenThread Authors.
 *  All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
@@ -50,7 +50,7 @@ enum
     OT_RADIO_MAX_TURNAROUND_TIME_US  = 12 * OT_RADIO_SYMBOL_TIME,         // specified max turnaround time.
     OT_RADIO_MAX_ACK_WAIT_US         = (OT_RADIO_AIFS_TIME_US + (10 * OT_RADIO_SYMBOL_TIME)),
     OT_RADIO_aMaxSifsFrameSize       = 18,
-    OT_RADIO_STARTUP_TIME_US         = OT_RADIO_LIFS_TIME_US,             // TODO check typical values.
+    OT_RADIO_STARTUP_TIME_US         = OT_RADIO_LIFS_TIME_US,             // Disabled -> active. TODO check typical values.
 };
 
 OT_TOOL_PACKED_BEGIN

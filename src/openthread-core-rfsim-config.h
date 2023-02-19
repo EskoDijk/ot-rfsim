@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017-2022, The OpenThread Authors.
+ *  Copyright (c) 2017-2023, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -34,6 +34,8 @@
 
 #ifndef OPENTHREAD_CORE_SIMULATION_CONFIG_H_
 #define OPENTHREAD_CORE_SIMULATION_CONFIG_H_
+
+#include "radio.h"
 
 #ifndef OPENTHREAD_RADIO
 #define OPENTHREAD_RADIO 0
@@ -160,6 +162,15 @@
 #define OPENTHREAD_CONFIG_MAC_SOFTWARE_TX_TIMING_ENABLE 1
 #endif
 #endif // OPENTHREAD_RADIO
+
+/**
+ * @def OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
+ *
+ * Define radio wake-up time from Sleep to Rx for CSL receiver.
+ */
+#ifndef OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
+#define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD OT_RADIO_TURNAROUND_TIME_US
+#endif
 
 /**
  * @def OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
