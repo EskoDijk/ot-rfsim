@@ -164,6 +164,17 @@
 #endif // OPENTHREAD_RADIO
 
 /**
+ * @def OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
+ *
+ * By default enable CSL receiver functionality, both for FTD and MTD.
+ * The FTD will only be CSL receiver when it's changed to 'MTD mode'
+ * using a mode command.
+ */
+#ifndef OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
+#define OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE 1
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
  *
  * Define radio wake-up time from Sleep to Rx for CSL receiver.
