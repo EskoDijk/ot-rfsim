@@ -70,9 +70,13 @@ OT_TOOL_WEAK void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const 
     syslog(convertOtLogLevelToSyslogLevel(aLogLevel), "%s", logString);
 
     // extend logString with newline, and then log this string to virtual UART.
-    logString[strLen] = '\n';
-    logString[strLen + 1] = '\0';
-    otSimSendUartWriteEvent((const uint8_t *) &logString[0], strLen + 1);
+    if (!gTerminate) {
+        logString[strLen] = '\n';
+        logString[strLen + 1] = '\0';
+        otSimSendUartWriteEvent((const uint8_t *) &logString[0], strLen + 1);
+    }else{
+        fprintf(stderr, logString);
+    }
 }
 
 int convertOtLogLevelToSyslogLevel(otLogLevel otLevel) {

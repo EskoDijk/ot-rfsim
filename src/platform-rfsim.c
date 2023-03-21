@@ -52,6 +52,7 @@ extern int gSockFd;
 uint64_t gLastAlarmEventId = 0;
 
 void platformExit(int exitCode) {
+    gTerminate = true;
     otPlatLog(OT_LOG_LEVEL_NOTE,OT_LOG_REGION_PLATFORM,
               "Exiting with exit code %d.", exitCode);
     exit(exitCode);

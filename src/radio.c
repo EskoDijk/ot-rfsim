@@ -230,10 +230,7 @@ void otPlatRadioSetExtendedAddress(otInstance *aInstance, const otExtAddress *aE
 
     ReverseExtAddress(&sExtAddress, aExtAddress);
 
-    // FIXME enable the below line in case of an RCP. Since the RCP doesn't emit particular OTNS status push
-    // events, it has to be done by the platform here.
-    //otSimSendExtAddrEvent(&sExtAddress);
-
+    otSimSendExtAddrEvent(&sExtAddress);
 }
 
 void otPlatRadioSetShortAddress(otInstance *aInstance, otShortAddress aShortAddress)

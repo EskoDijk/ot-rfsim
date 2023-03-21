@@ -57,6 +57,7 @@ enum
     OT_SIM_EVENT_RADIO_STATE         = 9,
     OT_SIM_EVENT_RADIO_RX_DONE       = 10,
     OT_SIM_EVENT_EXT_ADDR            = 11,
+    OT_SIM_EVENT_NODE_INFO           = 12,
 };
 
 #define OT_EVENT_DATA_MAX_SIZE 1024
@@ -156,5 +157,11 @@ void otSimSendOtnsStatusPushEvent(const char *aStatus, uint16_t aLength);
  * @param aExtAddress    The (new) Extended Address of the node.
  */
 void otSimSendExtAddrEvent(const otExtAddress *aExtAddress);
+
+/**
+ * This function send OT node information to the simulator.
+ */
+void otSimSendNodeInfoEvent(uint32_t nodeId);
+
 
 #endif // PLATFORM_SIMULATION_EVENT_SIM_H
