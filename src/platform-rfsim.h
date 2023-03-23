@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-2022, The OpenThread Authors.
+ *  Copyright (c) 2016-2023, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -64,10 +64,6 @@
 
 #define UNDEFINED_TIME_US 0  // an undefined period of time (us) that is > 0
 
-enum {
-    MAX_NETWORK_SIZE = OPENTHREAD_SIMULATION_MAX_NETWORK_SIZE,
-};
-
 /**
  * Unique node ID.
  *
@@ -78,6 +74,12 @@ extern uint32_t gNodeId;
  * ID of last received Alarm event from simulator, or 0 if no ID yet received.
  */
 extern uint64_t gLastAlarmEventId;
+
+/**
+ * State of requested termination of this node process.
+ *
+ */
+extern volatile bool gTerminate;
 
 /**
  * This function initializes the alarm service used by OpenThread.

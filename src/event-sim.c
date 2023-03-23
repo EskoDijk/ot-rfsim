@@ -122,22 +122,29 @@ void otSimSendExtAddrEvent(const otExtAddress *aExtAddress) {
     otSimSendEvent(&event);
 }
 
+void otSimSendNodeInfoEvent(uint32_t nodeId) {
+    struct Event event;
+
+    memcpy(event.mData, &nodeId, sizeof(uint32_t));
+    event.mEvent      = OT_SIM_EVENT_NODE_INFO;
+    event.mDelay      = 0;
+    event.mDataLength = sizeof(uint32_t);
+
+    otSimSendEvent(&event);
+}
+
 void otSimSendEvent(struct Event *aEvent)
 {
+    if (gSockFd == 0)   // don't send events if socket invalid.
+        return;
     ssize_t            rval;
-    struct sockaddr_in sockaddr;
-    memset(&sockaddr, 0, sizeof(sockaddr));
-    sockaddr.sin_family = AF_INET;
-    inet_pton(AF_INET, "127.0.0.1", &sockaddr.sin_addr);
-    sockaddr.sin_port = htons(sPortBase + sPortOffset);
 
     // send header and data.
-    rval = sendto(gSockFd, aEvent, offsetof(struct Event, mData) + aEvent->mDataLength, 0, (struct sockaddr *)&sockaddr,
-                  sizeof(sockaddr));
+    rval = write(gSockFd, aEvent, offsetof(struct Event, mData) + aEvent->mDataLength);
 
     if (rval < 0)
     {
-        perror("sendto");
+        perror("write");
         platformExit(EXIT_FAILURE);
     }
 }

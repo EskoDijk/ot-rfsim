@@ -36,17 +36,19 @@
 
 #include <errno.h>
 #include <libgen.h>
+#include <sys/socket.h>
+#include <sys/un.h>
 
 #include <openthread/tasklet.h>
 
 extern void platformReceiveEvent(otInstance *aInstance);
 extern bool gPlatformPseudoResetWasRequested;
-static void socket_init(void);
+static void socket_init(char *socketFilePath);
 static void handleSignal(int aSignal);
 
-static volatile bool gTerminate = false;
+volatile bool gTerminate = false;
 uint32_t gNodeId = 0;
-int gSockFd;
+int gSockFd = 0;
 uint16_t sPortBase = 9000;
 uint16_t sPortOffset;
 
@@ -58,28 +60,28 @@ void otSysInit(int argc, char *argv[]) {
         return;
     }
 
-    if (argc != 2) {
-        fprintf(stderr, "Usage: %s <nodeNumber>\n", basename(argv[0]));
+    if (argc != 3) {
+        fprintf(stderr, "Usage: %s <nodeNumber> <OTNS_PID>\n", basename(argv[0]));
         platformExit(EXIT_FAILURE);
     }
 
-    gNodeId = (uint32_t) strtol(argv[1], &endptr, 0);
-
-    if (*endptr != '\0' || gNodeId < 1 || gNodeId > MAX_NETWORK_SIZE) {
-        fprintf(stderr, "Invalid NodeId: %s (must be 1-%i)\n", argv[1], MAX_NETWORK_SIZE);
+    long nodeIdParam = strtol(argv[1], &endptr, 0);
+    if (*endptr != '\0' || nodeIdParam < 1 || nodeIdParam >= UINT32_MAX ) {
+        fprintf(stderr, "Invalid NodeId: %s (must be >= 1 and < UINT32_MAX )\n", argv[1]);
         platformExit(EXIT_FAILURE);
     }
+    gNodeId = (uint32_t) nodeIdParam;
 
     platformLoggingInit(argv[0]);
-
-    socket_init();
-
+    socket_init(argv[2]);
     platformAlarmInit(1);
     platformRadioInit();
     platformRandomInit();
 
     signal(SIGTERM, &handleSignal);
     signal(SIGHUP, &handleSignal);
+
+    otSimSendNodeInfoEvent(gNodeId);
 }
 
 bool otSysPseudoResetWasRequested(void) {
@@ -88,6 +90,7 @@ bool otSysPseudoResetWasRequested(void) {
 
 void otSysDeinit(void) {
     close(gSockFd);
+    gSockFd = 0;
 }
 
 void otSysProcessDrivers(otInstance *aInstance) {
@@ -157,30 +160,33 @@ static void parseFromEnvAsUint16(const char *aEnvName, uint16_t *aValue) {
 }
 
 /**
- * This function initialises the UDP socket used for communication with the simulator.
+ * This function initialises the client socket used for communication with the simulator.
  * The port number is calculated based on environment vars (if set) or else defaults.
  */
-static void socket_init(void) {
-    struct sockaddr_in sockaddr;
-    memset(&sockaddr, 0, sizeof(sockaddr));
-    sockaddr.sin_family = AF_INET;
+static void socket_init(char *socketFilePath) {
+    struct sockaddr_un sockaddr;
+    memset(&sockaddr, 0, sizeof(struct sockaddr_un));
+    sockaddr.sun_family = AF_UNIX;
+    int strLen = strlen(socketFilePath);
+    if (strLen >= sizeof(sockaddr.sun_path)) {
+        gTerminate = true;
+        otPlatLog(OT_LOG_LEVEL_CRIT,OT_LOG_REGION_PLATFORM,
+                  "Unix socket path too long: %s\n", socketFilePath);
+        platformExit(EXIT_FAILURE);
+    }
+    memcpy(sockaddr.sun_path, socketFilePath, strLen);
 
-    parseFromEnvAsUint16("PORT_BASE", &sPortBase);
-
-    parseFromEnvAsUint16("PORT_OFFSET", &sPortOffset);
-    sPortOffset *= (MAX_NETWORK_SIZE + 1);
-
-    sockaddr.sin_port = htons((uint16_t) (sPortBase + sPortOffset + gNodeId));
-    sockaddr.sin_addr.s_addr = INADDR_ANY;
-
-    gSockFd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+    gSockFd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
 
     if (gSockFd == -1) {
         perror("socket");
         platformExit(EXIT_FAILURE);
     }
 
-    if (bind(gSockFd, (struct sockaddr *) &sockaddr, sizeof(sockaddr)) == -1) {
+    if (connect(gSockFd, (struct sockaddr *) &sockaddr, sizeof(sockaddr)) == -1) {
+        gTerminate = true;
+        otPlatLog(OT_LOG_LEVEL_CRIT,OT_LOG_REGION_PLATFORM,
+                  "Unable to open Unix socket to OT-NS at: %s\n", sockaddr.sun_path);
         perror("bind");
         platformExit(EXIT_FAILURE);
     }
