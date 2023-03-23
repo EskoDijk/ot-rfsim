@@ -32,8 +32,8 @@
  *   for OpenThread. (All OPENTHREAD_CONFIG_* defines)
  */
 
-#ifndef OPENTHREAD_CORE_SIMULATION_CONFIG_H_
-#define OPENTHREAD_CORE_SIMULATION_CONFIG_H_
+#ifndef OPENTHREAD_CORE_RFSIM_CONFIG_H_
+#define OPENTHREAD_CORE_RFSIM_CONFIG_H_
 
 #include "radio.h"
 
@@ -168,7 +168,7 @@
  *
  * By default enable CSL receiver functionality, both for FTD and MTD.
  * The FTD will only be CSL receiver when it's changed to 'MTD mode'
- * using a mode command.
+ * using a mode command, and CSL period is set >0.
  */
 #ifndef OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
 #define OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE 1
@@ -177,10 +177,20 @@
 /**
  * @def OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
  *
- * Define radio wake-up time from Sleep to Rx for CSL receiver.
+ * Define radio wake-up time from Sleep to Rx for CSL receiver, in microseconds.
  */
 #ifndef OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
 #define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD OT_RADIO_TURNAROUND_TIME_US
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
+ *
+ * Define minimum schedule-request ahead time for Tx of CSL transmitterc,
+ * in microseconds.
+ */
+#ifndef OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
+#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US OT_RADIO_TURNAROUND_TIME_US
 #endif
 
 /**
@@ -336,7 +346,7 @@
  *
  */
 #ifndef OPENTHREAD_SIMULATION_MAX_NETWORK_SIZE
-#define OPENTHREAD_SIMULATION_MAX_NETWORK_SIZE 999
+#define OPENTHREAD_SIMULATION_MAX_NETWORK_SIZE 9999
 #endif
 
 /**
@@ -353,4 +363,4 @@
 #error "OPENTHREAD_CONFIG_OTNS_ENABLE MUST be '1' for the RFSIM platform"
 #endif
 
-#endif // OPENTHREAD_CORE_SIMULATION_CONFIG_H_
+#endif // OPENTHREAD_CORE_RFSIM_CONFIG_H_
