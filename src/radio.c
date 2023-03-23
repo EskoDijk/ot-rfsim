@@ -977,7 +977,7 @@ void radioReceive(otInstance *aInstance, otError aError)
 
     // Record SFD end-of-last-symbol timestamp. The simulator's timestamp indicates start of first symbol of
     // preamble so we need to adapt to "when SFD was received" (end of last symbol of SFD = start of PHY hdr)
-    sReceiveFrame.mInfo.mRxInfo.mTimestamp = sReceiveTimestamp + OT_RADIO_SHR_DURATION_US - OT_RADIO_SYMBOL_TIME/2;
+    sReceiveFrame.mInfo.mRxInfo.mTimestamp = sReceiveTimestamp + OT_RADIO_SHR_DURATION_US;
 
     if (sTxWait && otMacFrameIsAckRequested(&sTransmitFrame))
     {

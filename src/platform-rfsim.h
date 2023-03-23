@@ -59,7 +59,6 @@
 
 #include <openthread/instance.h>
 
-#include "platform-config.h"
 #include "event-sim.h"
 
 #define UNDEFINED_TIME_US 0  // an undefined period of time (us) that is > 0
