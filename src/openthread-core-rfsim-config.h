@@ -180,17 +180,17 @@
  * Define radio wake-up time from Sleep to Rx for CSL receiver, in microseconds.
  */
 #ifndef OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
-#define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD OT_RADIO_TURNAROUND_TIME_US
+#define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD OT_RADIO_RAMPUP_TIME_US
 #endif
 
 /**
  * @def OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
  *
- * Define minimum schedule-request ahead time for Tx of CSL transmitterc,
+ * Define minimum schedule-request ahead time for Tx of CSL transmitter,
  * in microseconds.
  */
 #ifndef OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
-#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US OT_RADIO_TURNAROUND_TIME_US
+#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US OT_RADIO_RAMPUP_TIME_US
 #endif
 
 /**
@@ -358,9 +358,6 @@
  */
 #ifndef OPENTHREAD_CONFIG_OTNS_ENABLE
 #define OPENTHREAD_CONFIG_OTNS_ENABLE 1
-#endif
-#if OPENTHREAD_CONFIG_OTNS_ENABLE==0
-#error "OPENTHREAD_CONFIG_OTNS_ENABLE MUST be '1' for the RFSIM platform"
 #endif
 
 #endif // OPENTHREAD_CORE_RFSIM_CONFIG_H_

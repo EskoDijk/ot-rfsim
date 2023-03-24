@@ -26,8 +26,8 @@
 *  POSSIBILITY OF SUCH DAMAGE.
 */
 
-#ifndef PLATFORM_SIMULATION_RADIO_H
-#define PLATFORM_SIMULATION_RADIO_H
+#ifndef PLATFORM_RFSIM_RADIO_H
+#define PLATFORM_RFSIM_RADIO_H
 
 #include <openthread/platform/radio.h>
 
@@ -39,7 +39,7 @@ enum
     SIM_CCA_ED_THRESHOLD_DEFAULT_DBM = SIM_RECEIVE_SENSITIVITY_DBM + 9,   // dBm, mandatory < 10 dB above rx sensitivity
     SIM_TX_POWER_DEFAULT_DBM         = 0,                                 // dBm
     SIM_CSL_ACCURACY_PPM             = 1,                                 // ppm
-    SIM_CSL_UNCERTAINTY_10US         = 1,                                 // units of 10 us (floor of true uncertainty)
+    SIM_CSL_UNCERTAINTY_10US         = 1,                                 // units of 10 us (ceiling of true uncertainty)
     kMinChannel                      = OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN,
     kMaxChannel                      = OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX,
     OT_RADIO_LIFS_TIME_US            = 40 * OT_RADIO_SYMBOL_TIME,
@@ -51,7 +51,8 @@ enum
     OT_RADIO_MAX_TURNAROUND_TIME_US  = 12 * OT_RADIO_SYMBOL_TIME,         // specified max turnaround time.
     OT_RADIO_MAX_ACK_WAIT_US         = (OT_RADIO_AIFS_TIME_US + (10 * OT_RADIO_SYMBOL_TIME)),
     OT_RADIO_aMaxSifsFrameSize       = 18,
-    OT_RADIO_STARTUP_TIME_US         = OT_RADIO_LIFS_TIME_US,             // Disabled -> active. TODO check typical values.
+    OT_RADIO_STARTUP_TIME_US         = 140,             // Disabled -> active, with channel setting.
+    OT_RADIO_RAMPUP_TIME_US          =  40,             // Sleeping -> Rx/Tx, no channel change.
 };
 
 OT_TOOL_PACKED_BEGIN
@@ -84,4 +85,4 @@ typedef enum
     OT_RADIO_SUBSTATE_INVALID,
 } RadioSubState;
 
-#endif // PLATFORM_SIMULATION_RADIO_H
+#endif // PLATFORM_RFSIM_RADIO_H

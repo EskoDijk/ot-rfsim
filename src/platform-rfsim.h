@@ -33,8 +33,8 @@
  *   platform-specific functions (platform....() ).
  */
 
-#ifndef PLATFORM_SIMULATION_H_
-#define PLATFORM_SIMULATION_H_
+#ifndef PLATFORM_RFSIM_H_
+#define PLATFORM_RFSIM_H_
 
 #include <openthread-core-config.h>
 #include <openthread/config.h>
@@ -269,4 +269,4 @@ void platformTrelProcess(otInstance *aInstance, const fd_set *aReadFdSet, const 
 
 #endif // OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
 
-#endif // PLATFORM_SIMULATION_H_
+#endif // PLATFORM_RFSIM_H_

@@ -281,7 +281,11 @@ static uint16_t getCslPhase(void)
     uint32_t cslPeriodInUs = sCslPeriod * OT_US_PER_TEN_SYMBOLS;
     uint32_t diff = ((sCslSampleTime % cslPeriodInUs) - (curTime % cslPeriodInUs) + cslPeriodInUs) % cslPeriodInUs;
 
-    return (uint16_t)(diff / OT_US_PER_TEN_SYMBOLS);
+    // phase integer needs to be 'rounded up' in fractional cases. Otherwise, CSL receiver
+    // might miss the first part of transmission.
+    if ( diff % OT_US_PER_TEN_SYMBOLS > 0)
+        diff += OT_US_PER_TEN_SYMBOLS;
+    return (uint16_t)( diff / OT_US_PER_TEN_SYMBOLS);
 }
 #endif
 
@@ -297,6 +301,7 @@ otError otPlatRadioEnable(otInstance *aInstance)
     if (!otPlatRadioIsEnabled(aInstance))
     {
         setRadioState(OT_RADIO_STATE_SLEEP);
+        setRadioSubState(OT_RADIO_SUBSTATE_STARTUP, OT_RADIO_STARTUP_TIME_US);
     }
 
     return OT_ERROR_NONE;
@@ -342,6 +347,9 @@ otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
 
     if (sState != OT_RADIO_STATE_DISABLED)
     {
+        if (sState == OT_RADIO_STATE_SLEEP) {
+            setRadioSubState(OT_RADIO_SUBSTATE_STARTUP, OT_RADIO_RAMPUP_TIME_US);
+        }
         error                  = OT_ERROR_NONE;
         sTxWait                = false;
         sReceiveFrame.mChannel = aChannel;

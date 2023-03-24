@@ -33,8 +33,8 @@
  *   parsing functions.
 */
 
-#ifndef PLATFORM_SIMULATION_EVENT_SIM_H
-#define PLATFORM_SIMULATION_EVENT_SIM_H
+#ifndef PLATFORM_RFSIM_EVENT_SIM_H
+#define PLATFORM_RFSIM_EVENT_SIM_H
 
 #include "platform-rfsim.h"
 #include "radio.h"
@@ -164,4 +164,4 @@ void otSimSendExtAddrEvent(const otExtAddress *aExtAddress);
 void otSimSendNodeInfoEvent(uint32_t nodeId);
 
 
-#endif // PLATFORM_SIMULATION_EVENT_SIM_H
+#endif // PLATFORM_RFSIM_EVENT_SIM_H
