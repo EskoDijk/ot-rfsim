@@ -176,7 +176,7 @@ static void socket_init(char *socketFilePath) {
     }
     memcpy(sockaddr.sun_path, socketFilePath, strLen);
 
-    gSockFd = socket(AF_UNIX, SOCK_SEQPACKET, 0);
+    gSockFd = socket(AF_UNIX, SOCK_STREAM, 0);
 
     if (gSockFd == -1) {
         perror("socket");
