@@ -184,10 +184,22 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_CSL_TRANSMIT_TIME_AHEAD
+ *
+ * Transmission scheduling and ramp up time needed for the CSL transmitter to be ready, in units of microseconds.
+ * This assumes the CSL transmitter goes from Rx (normal) state to Tx state as fast as it can, after having
+ * performed the CCA.
+ */
+#ifndef OPENTHREAD_CONFIG_CSL_TRANSMIT_TIME_AHEAD
+#define OPENTHREAD_CONFIG_CSL_TRANSMIT_TIME_AHEAD OT_RADIO_TURNAROUND_TIME_US
+#endif
+
+/**
  * @def OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
  *
- * Define minimum schedule-request ahead time for Tx of CSL transmitter,
- * in microseconds.
+ * Define minimum schedule-request ahead time for Tx of CSL transmitter, in microseconds.
+ * This is set here to the LIFS time, which is the worst-case time the radio Tx could be prohibited to be
+ * sending a new frame due to a potential frame sent just before.
  */
 #ifndef OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
 #define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US OT_RADIO_LIFS_TIME_US
