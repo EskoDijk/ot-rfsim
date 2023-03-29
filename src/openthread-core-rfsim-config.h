@@ -331,6 +331,21 @@
 #endif
 
 /**
+ * @def OPENTHREAD_CONFIG_NETDATA_PUBLISHER_MAX_PREFIX_ENTRIES
+ *
+ * Specifies max number of prefix entries in the NetData publisher.
+ * It is set to a higher number to enable various experiments.
+ */
+#ifndef OPENTHREAD_CONFIG_NETDATA_PUBLISHER_MAX_PREFIX_ENTRIES
+#define OPENTHREAD_CONFIG_NETDATA_PUBLISHER_MAX_PREFIX_ENTRIES 32
+#endif
+
+// For Experiments - change publisher thresholds.
+//#ifndef OPENTHREAD_CONFIG_NETDATA_PUBLISHER_DESIRED_NUM_EXTERNAL_ROUTE_ENTRIES
+//#define OPENTHREAD_CONFIG_NETDATA_PUBLISHER_DESIRED_NUM_EXTERNAL_ROUTE_ENTRIES 5
+//#endif
+
+/**
  * @def OPENTHREAD_CONFIG_DETERMINISTIC_ECDSA_ENABLE
  *
  * Define to 1 to generate ECDSA signatures determinsitically
