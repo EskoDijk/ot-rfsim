@@ -277,9 +277,11 @@ void platformRadioInit(void)
 #if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
 static uint16_t getCslPhase(void)
 {
-    uint32_t curTime       = otPlatAlarmMicroGetNow();
+    // Assuming the frame will be sent 'now', calculate the start of MAC Header which is the timing reference
+    // for the CSL phase calculation.
+    uint32_t macHdrTime       = otPlatAlarmMicroGetNow() + OT_RADIO_SHR_PHR_DURATION_US;
     uint32_t cslPeriodInUs = sCslPeriod * OT_US_PER_TEN_SYMBOLS;
-    uint32_t diff = ((sCslSampleTime % cslPeriodInUs) - (curTime % cslPeriodInUs) + cslPeriodInUs) % cslPeriodInUs;
+    uint32_t diff = ((sCslSampleTime % cslPeriodInUs) - (macHdrTime % cslPeriodInUs) + cslPeriodInUs) % cslPeriodInUs;
 
     // phase integer needs to be 'rounded up' in fractional cases. Otherwise, CSL receiver
     // might miss the first part of transmission.
