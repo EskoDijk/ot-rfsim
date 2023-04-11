@@ -42,15 +42,16 @@ enum
     SIM_CSL_UNCERTAINTY_10US         = 10,                                // units of 10 us (ceiling of true uncertainty)
     kMinChannel                      = OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MIN,
     kMaxChannel                      = OT_RADIO_2P4GHZ_OQPSK_CHANNEL_MAX,
-    OT_RADIO_LIFS_TIME_US            = 40 * OT_RADIO_SYMBOL_TIME,
-    OT_RADIO_SIFS_TIME_US            = 12 * OT_RADIO_SYMBOL_TIME,
-    OT_RADIO_AIFS_TIME_US            = 12 * OT_RADIO_SYMBOL_TIME,
-    OT_RADIO_CCA_TIME_US             = 8 * OT_RADIO_SYMBOL_TIME,
-    OT_RADIO_SHR_DURATION_US         = 5 * OT_RADIO_SYMBOLS_PER_OCTET * OT_RADIO_SYMBOL_TIME,   // for sync header.
+    OT_RADIO_LIFS_TIME_US            = 40 * OT_RADIO_SYMBOL_TIME,         // From 802.15.4 spec, LIFS
+    OT_RADIO_SIFS_TIME_US            = 12 * OT_RADIO_SYMBOL_TIME,         // From 802.15.4 spec, SIFS
+    OT_RADIO_AIFS_TIME_US            = 12 * OT_RADIO_SYMBOL_TIME,         // From 802.15.4 spec, AIFS
+    OT_RADIO_CCA_TIME_US             = 8 * OT_RADIO_SYMBOL_TIME,          // From 802.15.4 spec, CCA duration
+    OT_RADIO_SHR_DURATION_US         = 5 * OT_RADIO_SYMBOLS_PER_OCTET * OT_RADIO_SYMBOL_TIME,  // sync header (SHR)
+    OT_RADIO_SHR_PHR_DURATION_US     = 6 * OT_RADIO_SYMBOLS_PER_OCTET * OT_RADIO_SYMBOL_TIME,  // SHR + PHY header (PHR)
     OT_RADIO_TURNAROUND_TIME_US      = 40,                                // radio's turnaround: differs per radio model
     OT_RADIO_MAX_TURNAROUND_TIME_US  = 12 * OT_RADIO_SYMBOL_TIME,         // specified max turnaround time.
     OT_RADIO_MAX_ACK_WAIT_US         = (OT_RADIO_AIFS_TIME_US + (10 * OT_RADIO_SYMBOL_TIME)),
-    OT_RADIO_aMaxSifsFrameSize       = 18,
+    OT_RADIO_aMaxSifsFrameSize       = 18,              // From 802.15.4 spec - frame size considered 'short'
     OT_RADIO_STARTUP_TIME_US         = 140,             // Disabled -> active, with channel setting.
     OT_RADIO_RAMPUP_TIME_US          =  40,             // Sleeping -> Rx/Tx, no channel change.
 };
