@@ -277,11 +277,15 @@ void platformRadioInit(void)
 #if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
 static uint16_t getCslPhase(void)
 {
-    // Assuming the frame will be sent 'now', calculate the start of MAC Header which is the timing reference
-    // for the CSL phase calculation.
-    uint32_t macHdrTime       = otPlatAlarmMicroGetNow() + OT_RADIO_SHR_PHR_DURATION_US;
+    // The CSL-Phase-Time is the time between 1) start of MHR of current frame to be sent,
+    // and 2) start of MHR of next frame that will be CSL-received (i.e. sampled).
+    // This is equal to the time between 1) start of preamble of current frame to be sent,
+    // and 2) start of preamble reception of next frame that will be CSL-received.
+    //
+    // Calculation assumes Tx frame will be sent 'now' i.e. start of preamble is now.
+    uint32_t txPreambleStartTime = otPlatAlarmMicroGetNow();
     uint32_t cslPeriodInUs = sCslPeriod * OT_US_PER_TEN_SYMBOLS;
-    uint32_t diff = ((sCslSampleTime % cslPeriodInUs) - (macHdrTime % cslPeriodInUs) + cslPeriodInUs) % cslPeriodInUs;
+    uint32_t diff = ((sCslSampleTime % cslPeriodInUs) - (txPreambleStartTime % cslPeriodInUs) + cslPeriodInUs) % cslPeriodInUs;
 
     // phase integer needs to be 'rounded up' in fractional cases. Otherwise, CSL receiver
     // might miss the first part of transmission.
