@@ -63,6 +63,14 @@ enum
 #define OT_EVENT_DATA_MAX_SIZE 1024
 
 OT_TOOL_PACKED_BEGIN
+struct EventHeader
+{
+    uint64_t mDelay;
+    uint8_t  mEvent;
+    uint16_t mDataLength;
+} OT_TOOL_PACKED_END;
+
+OT_TOOL_PACKED_BEGIN
 struct Event
 {
     uint64_t mDelay;

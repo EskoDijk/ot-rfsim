@@ -61,16 +61,38 @@ void platformExit(int exitCode) {
 void platformReceiveEvent(otInstance *aInstance)
 {
     struct Event event;
-    ssize_t      rval = recvfrom(gSockFd, (char *)&event, sizeof(event), 0, NULL, NULL);
+    ssize_t      rval = recvfrom(gSockFd, (char *)&event, sizeof(struct EventHeader), 0, NULL, NULL);
     const uint8_t *evData = event.mData;
 
-    if (rval < 0 || (uint16_t)rval < offsetof(struct Event, mData))
+    if (rval < 0)
     {
         perror("recvfrom");
         platformExit(EXIT_FAILURE);
     }
-    size_t payloadLen = rval - offsetof(struct Event, mData);
+    else if ((uint16_t)rval < sizeof(struct EventHeader)) {
+        fprintf(stderr, "incomplete event received, len=%li", rval);
+        platformExit(EXIT_FAILURE);
+    }
 
+    // read the rest of data (payload data - optional).
+    uint16_t payloadLen = event.mDataLength;
+    if (payloadLen > 0) {
+        if (payloadLen > sizeof(event.mData)) {
+            fprintf(stderr, "too-large event payload detected, len=%u, expected <= %lu", payloadLen, sizeof(event.mData));
+            platformExit(EXIT_FAILURE);
+        }
+        rval = recvfrom(gSockFd, (char *)&event.mData, payloadLen, 0, NULL, NULL);
+        if (rval < 0)
+        {
+            perror("recvfrom");
+            platformExit(EXIT_FAILURE);
+        }
+        else if ((uint16_t)rval < payloadLen) {
+            fprintf(stderr, "incomplete event payload received, len=%li, expected=%u", rval, payloadLen);
+            platformExit(EXIT_FAILURE);
+        }
+
+    }
     platformAlarmAdvanceNow(event.mDelay);
 
     switch (event.mEvent)

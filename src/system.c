@@ -117,7 +117,7 @@ void otSysProcessDrivers(otInstance *aInstance) {
         platformRadioReportStateToSimulator();
         otSimSendSleepEvent();
 
-        // wake up by reception of UDP event from simulator.
+        // wake up by reception of socket event from simulator.
         rval = select(max_fd + 1, &read_fds, &write_fds, &error_fds, NULL);
 
         if ((rval < 0) && (errno != EINTR)) {
