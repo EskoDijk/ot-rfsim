@@ -38,6 +38,7 @@
 
 #include <openthread/config.h>
 #include <openthread/logging.h>
+#include "core/common/logging.hpp"
 #include <openthread/platform/flash.h>
 
 #include "lib/platform/exit_code.h"

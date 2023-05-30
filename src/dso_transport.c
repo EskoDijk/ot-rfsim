@@ -28,9 +28,9 @@
 
 #include "platform-rfsim.h"
 
-#include <openthread/platform/dso_transport.h>
-
 #if OPENTHREAD_CONFIG_DNS_DSO_ENABLE
+
+#include <openthread/platform/dso_transport.h>
 
 void otPlatDsoEnableListening(otInstance *aInstance, bool aEnable)
 {

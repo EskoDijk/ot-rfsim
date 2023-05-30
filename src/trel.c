@@ -28,12 +28,11 @@
 
 #include "platform-rfsim.h"
 
-#include <openthread/random_noncrypto.h>
-#include <openthread/platform/trel.h>
-
-#include "utils/code_utils.h"
-
 #if OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
+
+#include <openthread/random_noncrypto.h>
+#include "utils/code_utils.h"
+#include <openthread/platform/trel.h>
 
 // Change DEBUG_LOG to all extra logging
 #define DEBUG_LOG 0
