@@ -166,12 +166,11 @@
 /**
  * @def OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
  *
- * By default enable CSL receiver functionality, both for FTD and MTD.
- * The FTD will only be CSL receiver when it's changed to 'MTD mode'
- * using a mode command, and CSL period is set >0.
+ * By default disable CSL receiver functionality. Build script may enable it.
+ * Disabling by default enables support for doing a Thread v1.1 build if wanted.
  */
 #ifndef OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
-#define OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE 1
+#define OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE 0
 #endif
 
 /**
@@ -232,20 +231,6 @@
 #define CLI_COAP_SECURE_USE_COAP_DEFAULT_HANDLER 1
 
 /**
- * @def OPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE
- *
- * Define to 1 if you want to enable radio coexistence implemented in platform.
- *
- */
-#ifndef OPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE
-#define OPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE 1
-#endif
-
-#ifndef OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE
-#define OPENTHREAD_CONFIG_PARENT_SEARCH_ENABLE 1
-#endif
-
-/**
  * @def OPENTHREAD_CONFIG_LOG_PLATFORM
  *
  * Define to enable platform region logging.
@@ -278,24 +263,11 @@
 /**
  * @def OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
  *
- * The maximum number of children.
+ * The maximum number of children. FIXME remove.
  *
  */
 #ifndef OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
 #define OPENTHREAD_CONFIG_MLE_MAX_CHILDREN 128
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_MLE_INFORM_PREVIOUS_PARENT_ON_REATTACH
- *
- * Define as 1 for a child to inform its previous parent when it attaches to a new parent.
- *
- * If this feature is enabled, when a device attaches to a new parent, it will send an IP message (with empty payload
- * and mesh-local IP address as the source address) to its previous parent.
- *
- */
-#ifndef OPENTHREAD_CONFIG_MLE_INFORM_PREVIOUS_PARENT_ON_REATTACH
-#define OPENTHREAD_CONFIG_MLE_INFORM_PREVIOUS_PARENT_ON_REATTACH 1
 #endif
 
 /**
@@ -316,44 +288,6 @@
  */
 #ifndef OPENTHREAD_CONFIG_LOG_PREPEND_UPTIME
 #define OPENTHREAD_CONFIG_LOG_PREPEND_UPTIME 1
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_MAX_SERVICES
- *
- * Specifies number of service entries in the SRP client service pool.
- *
- * This config is applicable only when `OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_ENABLE` is enabled.
- *
- */
-#ifndef OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_MAX_SERVICES
-#define OPENTHREAD_CONFIG_SRP_CLIENT_BUFFERS_MAX_SERVICES 20
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_NETDATA_PUBLISHER_MAX_PREFIX_ENTRIES
- *
- * Specifies max number of prefix entries in the NetData publisher.
- * It is set to a higher number to enable various experiments.
- */
-#ifndef OPENTHREAD_CONFIG_NETDATA_PUBLISHER_MAX_PREFIX_ENTRIES
-#define OPENTHREAD_CONFIG_NETDATA_PUBLISHER_MAX_PREFIX_ENTRIES 32
-#endif
-
-// For Experiments - change publisher thresholds.
-//#ifndef OPENTHREAD_CONFIG_NETDATA_PUBLISHER_DESIRED_NUM_EXTERNAL_ROUTE_ENTRIES
-//#define OPENTHREAD_CONFIG_NETDATA_PUBLISHER_DESIRED_NUM_EXTERNAL_ROUTE_ENTRIES 5
-//#endif
-
-/**
- * @def OPENTHREAD_CONFIG_DETERMINISTIC_ECDSA_ENABLE
- *
- * Define to 1 to generate ECDSA signatures determinsitically
- * according to RFC 6979 instead of randomly.
- *
- */
-#ifndef OPENTHREAD_CONFIG_DETERMINISTIC_ECDSA_ENABLE
-#define OPENTHREAD_CONFIG_DETERMINISTIC_ECDSA_ENABLE 1
 #endif
 
 /**

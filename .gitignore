@@ -46,3 +46,7 @@ __pycache__
 # Images
 *.hex
 *.zip
+
+# OT version builds
+ot-versions/ot-cli*
+
