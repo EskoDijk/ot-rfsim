@@ -29,10 +29,6 @@
 
 OT_OPTIONS=(
         "-DOT_THREAD_VERSION=1.2"
-        "-DOT_COVERAGE=OFF"
-        "-DOT_CSL_RECEIVER=ON"
-        "-DOT_SRP_CLIENT=OFF"
-        "-DOT_SRP_SERVER=OFF"
 )
 readonly OT_OPTIONS
 

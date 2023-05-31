@@ -35,7 +35,7 @@
 #ifndef OPENTHREAD_CORE_RFSIM_CONFIG_H_
 #define OPENTHREAD_CORE_RFSIM_CONFIG_H_
 
-#include "radio.h"
+#include "radio-parameters.h"
 
 #ifndef OPENTHREAD_RADIO
 #define OPENTHREAD_RADIO 0
@@ -55,7 +55,7 @@
  * Specify where the log output should go.
  *
  */
-#ifndef OPENTHREAD_CONFIG_LOG_OUTPUT /* allow command line override */
+#ifndef OPENTHREAD_CONFIG_LOG_OUTPUT /* allows command line override */
 #define OPENTHREAD_CONFIG_LOG_OUTPUT OPENTHREAD_CONFIG_LOG_OUTPUT_PLATFORM_DEFINED
 #endif
 
@@ -74,11 +74,44 @@
 #endif
 
 #ifndef OPENTHREAD_CONFIG_SRP_SERVER_ENABLE
-#define OPENTHREAD_CONFIG_SRP_SERVER_ENABLE 1
+#define OPENTHREAD_CONFIG_SRP_SERVER_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
 #endif
 
 #ifndef OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE
-#define OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE 1
+#define OPENTHREAD_CONFIG_SRP_CLIENT_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
+#endif
+
+#ifndef OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
+#define OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2)
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
+ *
+ * Define radio wake-up time from Sleep to Rx for CSL receiver, in microseconds.
+ */
+#ifndef OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
+#define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD OT_RADIO_RAMPUP_TIME_US
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_CSL_TRANSMIT_TIME_AHEAD
+ *
+ * Transmission scheduling and ramp up time needed for the CSL transmitter to be ready, in units of microseconds.
+ * This assumes the CSL transmitter goes from Rx (normal) state to Tx state as fast as it can, after having
+ * performed the CCA.
+ */
+#ifndef OPENTHREAD_CONFIG_CSL_TRANSMIT_TIME_AHEAD
+#define OPENTHREAD_CONFIG_CSL_TRANSMIT_TIME_AHEAD OT_RADIO_TURNAROUND_TIME_US
+#endif
+
+/**
+ * @def OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
+ *
+ * Define minimum schedule-request ahead time for Tx of CSL transmitter, in microseconds.
+ */
+#ifndef OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
+#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US OT_RADIO_STARTUP_TIME_US
 #endif
 
 #ifndef OPENTHREAD_CONFIG_JOINER_ENABLE
@@ -94,7 +127,7 @@
 #endif
 
 #ifndef OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE
-#define OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE 1
+#define OPENTHREAD_CONFIG_BORDER_ROUTER_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
 #endif
 
 #ifndef OPENTHREAD_CONFIG_TMF_NETDATA_SERVICE_ENABLE
@@ -164,47 +197,6 @@
 #endif // OPENTHREAD_RADIO
 
 /**
- * @def OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
- *
- * By default disable CSL receiver functionality. Build script may enable it.
- * Disabling by default enables support for doing a Thread v1.1 build if wanted.
- */
-#ifndef OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
-#define OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE 0
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
- *
- * Define radio wake-up time from Sleep to Rx for CSL receiver, in microseconds.
- */
-#ifndef OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD
-#define OPENTHREAD_CONFIG_CSL_RECEIVE_TIME_AHEAD OT_RADIO_RAMPUP_TIME_US
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_CSL_TRANSMIT_TIME_AHEAD
- *
- * Transmission scheduling and ramp up time needed for the CSL transmitter to be ready, in units of microseconds.
- * This assumes the CSL transmitter goes from Rx (normal) state to Tx state as fast as it can, after having
- * performed the CCA.
- */
-#ifndef OPENTHREAD_CONFIG_CSL_TRANSMIT_TIME_AHEAD
-#define OPENTHREAD_CONFIG_CSL_TRANSMIT_TIME_AHEAD OT_RADIO_TURNAROUND_TIME_US
-#endif
-
-/**
- * @def OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
- *
- * Define minimum schedule-request ahead time for Tx of CSL transmitter, in microseconds.
- * This is set here to the LIFS time, which is the worst-case time the radio Tx could be prohibited to be
- * sending a new frame due to a potential frame sent just before.
- */
-#ifndef OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
-#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US OT_RADIO_LIFS_TIME_US
-#endif
-
-/**
  * @def OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
  *
  * Define to 1 if you want to support microsecond timer in platform.
@@ -263,7 +255,7 @@
 /**
  * @def OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
  *
- * The maximum number of children. FIXME remove.
+ * The maximum number of children. FIXME remove: for accurate simulations use realistic 'normal' child number.
  *
  */
 #ifndef OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
@@ -301,24 +293,12 @@
 #endif
 
 /**
- * @def OPENTHREAD_SIMULATION_MAX_NETWORK_SIZE
- *
- * This setting configures the maximum network size in simulation.
- *
- */
-#ifndef OPENTHREAD_SIMULATION_MAX_NETWORK_SIZE
-#define OPENTHREAD_SIMULATION_MAX_NETWORK_SIZE 9999
-#endif
-
-/**
  * @def OPENTHREAD_CONFIG_OTNS_ENABLE
  *
  * This setting configures OT-NS simulator support. It MUST be enabled
  * for the RFSIM platform.
  *
  */
-#ifndef OPENTHREAD_CONFIG_OTNS_ENABLE
 #define OPENTHREAD_CONFIG_OTNS_ENABLE 1
-#endif
 
 #endif // OPENTHREAD_CORE_RFSIM_CONFIG_H_
