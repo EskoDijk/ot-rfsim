@@ -61,7 +61,7 @@ void otSysInit(int argc, char *argv[]) {
     }
 
     if (argc != 3) {
-        fprintf(stderr, "Usage: %s <nodeNumber> <OTNS_PID>\n", basename(argv[0]));
+        fprintf(stderr, "Usage: %s <nodeNumber> <OTNS-socket-file>\n", basename(argv[0]));
         platformExit(EXIT_FAILURE);
     }
 

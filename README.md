@@ -1,7 +1,8 @@
 # OpenThread on RF-simulator (OT-NS) platform
 
-This repo contains 'ot-rfsim', an example OpenThread platform driver for simulated OT nodes. A simulated OT node can be started from an RF simulator, such as 
-[OT-NS](https://github.com/EskoDijk/ot-ns).
+This repo contains 'ot-rfsim', an example OpenThread platform driver for simulated OT nodes. A simulated OT node can be
+started from an RF simulator, such as [OT-NS](https://github.com/EskoDijk/ot-ns).
+It connects to the simulator using the Unix Domain Socket as provided in the commandline parameters.
 
 ## Prerequisites
 
@@ -30,7 +31,7 @@ for extra debug info that can then be optionally displayed in OT-NS using the `w
 $ ./script/build -DOT_FULL_LOGS=ON
 ```
 
-After a successful build, the executable files are found in:
+After a successful build, the executable files are found in the directory:
 
 ```
 ./build/bin
@@ -46,6 +47,7 @@ then the built `ot-cli-ftd` will be used in the simulation:
 $ cd build/bin
 $ otns
 > add router x 50 y 50
+1
 Done
 ```
 
@@ -53,24 +55,30 @@ Also the executables can be tested on the command line as follows:
 
 ```bash
 $ cd build/bin
-$ ./ot-cli-ftd 1
+$ ./ot-cli-ftd
+Usage: ot-cli-ftd <nodeNumber> <OTNS-socket-file>
+$
 ```
 
-The simulated OpenThread FTD will in this case bind to the UDP port 9001 and await a connection from a simulator. 
-No further interaction with the process is possible. Press Ctrl+C to stop the program. 
+This will print a usage message and exit the node. 
 
 
 ## Contributing
 
-We would love for you to contribute to OpenThread and help make it even better than it is today! See our [Contributing Guidelines](https://github.com/openthread/openthread/blob/main/CONTRIBUTING.md) for more information.
+We would love for you to contribute to OpenThread and help make it even better than it is today! See our 
+[Contributing Guidelines](https://github.com/openthread/openthread/blob/main/CONTRIBUTING.md) for more information.
 
-Contributors are required to abide by our [Code of Conduct](https://github.com/openthread/openthread/blob/main/CODE_OF_CONDUCT.md) and [Coding Conventions and Style Guide](https://github.com/openthread/openthread/blob/main/STYLE_GUIDE.md).
+Contributors are required to abide by our 
+[Code of Conduct](https://github.com/openthread/openthread/blob/main/CODE_OF_CONDUCT.md) and 
+[Coding Conventions and Style Guide](https://github.com/openthread/openthread/blob/main/STYLE_GUIDE.md).
 
 ## License
 
-OpenThread is released under the [BSD 3-Clause license](https://github.com/EskoDijk/ot-rfsim/blob/main/LICENSE). See the [`LICENSE`](https://github.com/EskoDijk/ot-rfsim/blob/main/LICENSE) file for more information.
+OpenThread is released under the [BSD 3-Clause license](https://github.com/EskoDijk/ot-rfsim/blob/main/LICENSE). 
+See the [`LICENSE`](https://github.com/EskoDijk/ot-rfsim/blob/main/LICENSE) file for more information.
 
-Please only use the OpenThread name and marks when accurately referencing this software distribution. Do not use the marks in a way that suggests you are endorsed by or otherwise affiliated with Nest, Google, or The Thread Group.
+Please only use the OpenThread name and marks when accurately referencing this software distribution. Do not use the 
+marks in a way that suggests you are endorsed by or otherwise affiliated with Nest, Google, or The Thread Group.
 
 ## Need help?
 
