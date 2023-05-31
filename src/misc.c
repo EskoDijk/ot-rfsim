@@ -32,6 +32,7 @@
 #include <unistd.h>
 
 #include <openthread/platform/misc.h>
+#include <openthread/logging.h>
 
 #include "openthread-system.h"
 
@@ -58,6 +59,15 @@ void otPlatReset(otInstance *aInstance)
     assert(false);
 
 #endif // OPENTHREAD_PLATFORM_USE_PSEUDO_RESET
+}
+
+void otPlatAssertFail(const char *aFilename, int aLineNumber)
+{
+    otLogCritPlat("assert failed at %s:%d", aFilename, aLineNumber);
+
+    // For debug build, use assert to generate a core dump
+    assert(false);
+    exit(1);
 }
 
 otPlatResetReason otPlatGetResetReason(otInstance *aInstance)

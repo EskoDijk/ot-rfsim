@@ -292,6 +292,9 @@
 #define OPENTHREAD_PLATFORM_USE_PSEUDO_RESET 1
 #endif
 
+// Platform-specific handling of OT_ASSERT calls in stack.
+#define OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT 0
+
 /**
  * @def OPENTHREAD_CONFIG_OTNS_ENABLE
  *
