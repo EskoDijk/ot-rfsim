@@ -61,6 +61,7 @@ void otPlatReset(otInstance *aInstance)
 #endif // OPENTHREAD_PLATFORM_USE_PSEUDO_RESET
 }
 
+#if OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT
 void otPlatAssertFail(const char *aFilename, int aLineNumber)
 {
     otLogCritPlat("assert failed at %s:%d", aFilename, aLineNumber);
@@ -69,6 +70,7 @@ void otPlatAssertFail(const char *aFilename, int aLineNumber)
     assert(false);
     exit(1);
 }
+#endif
 
 otPlatResetReason otPlatGetResetReason(otInstance *aInstance)
 {
