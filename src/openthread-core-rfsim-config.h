@@ -255,11 +255,11 @@
 /**
  * @def OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
  *
- * The maximum number of children. FIXME remove: for accurate simulations use realistic 'normal' child number.
+ * The maximum number of children for a Router. Default is the minimum required for a certified device.
  *
  */
 #ifndef OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
-#define OPENTHREAD_CONFIG_MLE_MAX_CHILDREN 128
+#define OPENTHREAD_CONFIG_MLE_MAX_CHILDREN 10
 #endif
 
 /**
