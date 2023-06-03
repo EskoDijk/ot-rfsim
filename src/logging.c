@@ -38,6 +38,7 @@
 
 #include <openthread/platform/logging.h>
 #include <openthread/platform/toolchain.h>
+#include "common/debug.hpp"
 
 #if (OPENTHREAD_CONFIG_LOG_OUTPUT == OPENTHREAD_CONFIG_LOG_OUTPUT_PLATFORM_DEFINED)
 
@@ -65,7 +66,7 @@ OT_TOOL_WEAK void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion, const 
     va_start(args, aFormat);
     strLen = vsnprintf(&logString[0], sizeof(logString) - 2, aFormat, args);
     va_end(args);
-    assert(strLen >= 0);
+    OT_ASSERT(strLen >= 0);
 
     syslog(convertOtLogLevelToSyslogLevel(aLogLevel), "%s", logString);
 

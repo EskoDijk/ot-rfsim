@@ -41,15 +41,17 @@
 #include <stdlib.h>
 
 #include <openthread/tasklet.h>
+#include "common/debug.hpp"
 
 #include "event-sim.h"
 #include "utils/uart.h"
 
-#define VERIFY_EVENT_SIZE(X) assert( (payloadLen >= sizeof(X)) && "received event payload too small" );
+#define VERIFY_EVENT_SIZE(X) OT_ASSERT( (payloadLen >= sizeof(X)) && "received event payload too small" );
 
 extern int gSockFd;
 
 uint64_t gLastAlarmEventId = 0;
+struct Event gLastRecvEvent;
 
 void platformExit(int exitCode) {
     gTerminate = true;
@@ -93,6 +95,9 @@ void platformReceiveEvent(otInstance *aInstance)
         }
 
     }
+
+    gLastRecvEvent = event;
+
     platformAlarmAdvanceNow(event.mDelay);
 
     switch (event.mEvent)
@@ -138,7 +143,7 @@ void platformReceiveEvent(otInstance *aInstance)
         break;
 
     default:
-        assert(false && "Unrecognized event type received");
+        OT_ASSERT(false && "Unrecognized event type received");
     }
 }
 
@@ -147,7 +152,7 @@ void otPlatOtnsStatus(const char *aStatus)
     uint16_t     statusLength = (uint16_t)strlen(aStatus);
     if (statusLength > OT_EVENT_DATA_MAX_SIZE){
         statusLength = OT_EVENT_DATA_MAX_SIZE;
-        assert(statusLength <= OT_EVENT_DATA_MAX_SIZE);
+        OT_ASSERT(statusLength <= OT_EVENT_DATA_MAX_SIZE);
     }
     otSimSendOtnsStatusPushEvent(aStatus, statusLength);
 }

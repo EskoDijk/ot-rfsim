@@ -43,6 +43,7 @@
 #include "utils/mac_frame.h"
 #include "utils/soft_source_match_table.h"
 #include "event-sim.h"
+#include "common/debug.hpp"
 
 // declaration of radio functions
 static void setRadioSubState(RadioSubState aState, uint64_t timeToRemainInState);
@@ -691,8 +692,8 @@ otError otPlatRadioEnergyScan(otInstance *aInstance, uint8_t aScanChannel, uint1
     otError error = OT_ERROR_NONE;
 
     assert(aInstance != NULL);
-    assert(aScanChannel >= kMinChannel && aScanChannel <= kMaxChannel);
-    assert(aScanDuration > 0);
+    OT_ASSERT(aScanChannel >= kMinChannel && aScanChannel <= kMaxChannel);
+    OT_ASSERT(aScanDuration > 0);
 
     otEXPECT_ACTION((gRadioCaps & OT_RADIO_CAPS_ENERGY_SCAN), error = OT_ERROR_NOT_IMPLEMENTED);
     otEXPECT_ACTION(!sEnergyScanning, error = OT_ERROR_BUSY);
@@ -755,7 +756,7 @@ otError otPlatRadioGetFemLnaGain(otInstance *aInstance, int8_t *aGain)
 {
     OT_UNUSED_VARIABLE(aInstance);
 
-    assert(aInstance != NULL && aGain != NULL);
+    OT_ASSERT(aInstance != NULL && aGain != NULL);
 
     *aGain = sLnaGain;
 
@@ -1149,7 +1150,7 @@ void platformRadioRxStart(otInstance *aInstance, struct RadioCommEventData *aRxP
 void platformRadioRxDone(otInstance *aInstance, const uint8_t *aBuf, uint16_t aBufLength, struct RadioCommEventData *aRxParams)
 {
     OT_UNUSED_VARIABLE(aInstance);
-    assert(sizeof(sReceiveMessage) >= aBufLength);
+    OT_ASSERT(sizeof(sReceiveMessage) >= aBufLength);
 
     // only process in valid substates:
     otEXPECT( sSubState == OT_RADIO_SUBSTATE_RX_FRAME_ONGOING || sSubState == OT_RADIO_SUBSTATE_TX_ACK_RX_ONGOING );
@@ -1348,7 +1349,7 @@ void platformRadioProcess(otInstance *aInstance, const fd_set *aReadFdSet, const
                 break;
 
             default:
-                assert(false && "Illegal state found");
+                OT_ASSERT(false && "Illegal state found");
         }
     }
 }

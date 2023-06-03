@@ -98,6 +98,7 @@ struct RadioStateEventData
     uint8_t  mState; // OT state of radio (disabled, sleep, Tx, Rx)
 } OT_TOOL_PACKED_END;
 
+#define EVENT_TO_STRING(evt)
 /**
  * This function sends a generic simulation event to the simulator. Event fields are
  * updated to the values as were used for sending it.
@@ -170,6 +171,5 @@ void otSimSendExtAddrEvent(const otExtAddress *aExtAddress);
  * This function send OT node information to the simulator.
  */
 void otSimSendNodeInfoEvent(uint32_t nodeId);
-
 
 #endif // PLATFORM_RFSIM_EVENT_SIM_H

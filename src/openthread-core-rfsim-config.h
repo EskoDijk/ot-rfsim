@@ -292,8 +292,15 @@
 #define OPENTHREAD_PLATFORM_USE_PSEUDO_RESET 1
 #endif
 
-// Platform-specific handling of OT_ASSERT calls in stack.
-#define OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT 0
+/**
+ * @def OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT
+ *
+ * Define as 1 to enable custom log message printing upon OT_ASSERT by the OpenThread stack.
+ * Define as 0 to enable the default C library 'assert' function to handle OT_ASSERT.
+ */
+#ifndef OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT
+#define OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT 1
+#endif
 
 /**
  * @def OPENTHREAD_CONFIG_OTNS_ENABLE

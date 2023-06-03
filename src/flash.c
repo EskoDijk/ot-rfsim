@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2020, The OpenThread Authors.
+ *  Copyright (c) 2020-2023, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -42,6 +42,7 @@
 #include <openthread/platform/flash.h>
 
 #include "lib/platform/exit_code.h"
+#include "common/debug.hpp"
 
 static int sFlashFd = -1;
 
@@ -107,7 +108,7 @@ void otPlatFlashErase(otInstance *aInstance, uint8_t aSwapIndex)
     uint32_t address;
     ssize_t  rval;
 
-    assert((sFlashFd >= 0) && (aSwapIndex < SWAP_NUM));
+    OT_ASSERT((sFlashFd >= 0) && (aSwapIndex < SWAP_NUM));
 
     address = aSwapIndex ? SWAP_SIZE : 0;
     memset(buffer, 0xff, sizeof(buffer));
@@ -123,7 +124,7 @@ void otPlatFlashRead(otInstance *aInstance, uint8_t aSwapIndex, uint32_t aOffset
     uint32_t address;
     ssize_t  rval;
 
-    assert((sFlashFd >= 0) && (aSwapIndex < SWAP_NUM) && (aSize <= SWAP_SIZE) && (aOffset <= (SWAP_SIZE - aSize)));
+    OT_ASSERT((sFlashFd >= 0) && (aSwapIndex < SWAP_NUM) && (aSize <= SWAP_SIZE) && (aOffset <= (SWAP_SIZE - aSize)));
 
     address = aSwapIndex ? SWAP_SIZE : 0;
 
@@ -139,7 +140,7 @@ void otPlatFlashWrite(otInstance *aInstance, uint8_t aSwapIndex, uint32_t aOffse
     uint8_t  byte;
     ssize_t  rval;
 
-    assert((sFlashFd >= 0) && (aSwapIndex < SWAP_NUM) && (aSize <= SWAP_SIZE) && (aOffset <= (SWAP_SIZE - aSize)));
+    OT_ASSERT((sFlashFd >= 0) && (aSwapIndex < SWAP_NUM) && (aSize <= SWAP_SIZE) && (aOffset <= (SWAP_SIZE - aSize)));
 
     address = aSwapIndex ? SWAP_SIZE : 0;
     address += aOffset;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016, The OpenThread Authors.
+ *  Copyright (c) 2016-2023, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -33,10 +33,10 @@
 
 #include <openthread/platform/misc.h>
 #include <openthread/logging.h>
-
 #include "openthread-system.h"
 
 extern jmp_buf gResetJump;
+extern struct Event gLastSentEvent, gLastRecvEvent;
 
 static otPlatResetReason   sPlatResetReason = OT_PLAT_RESET_REASON_POWER_ON;
 bool                       gPlatformPseudoResetWasRequested;
@@ -64,8 +64,11 @@ void otPlatReset(otInstance *aInstance)
 #if OPENTHREAD_CONFIG_PLATFORM_ASSERT_MANAGEMENT
 void otPlatAssertFail(const char *aFilename, int aLineNumber)
 {
-    otLogCritPlat("assert failed at %s:%d", aFilename, aLineNumber);
-
+    fprintf(stderr,"assert failed at %s:%d\n", aFilename, aLineNumber);
+    fprintf(stderr, "Last sent Event: tp=%i dly=%lu datalen=%u\n",
+                   gLastSentEvent.mEvent, gLastSentEvent.mDelay, gLastSentEvent.mDataLength);
+    fprintf(stderr, "Last recv Event: tp=%i dly=%lu datalen=%u\n",
+                   gLastRecvEvent.mEvent, gLastRecvEvent.mDelay, gLastRecvEvent.mDataLength);
     // For debug build, use assert to generate a core dump
     assert(false);
     exit(1);
