@@ -53,7 +53,7 @@ build()
     cd "${builddir}"
 
     cmake -GNinja -DOT_COMPILE_WARNING_AS_ERROR=ON "$@" "${OT_SRCDIR}"
-    ninja -j7 ot-cli-ftd ot-cli-mtd ot-rcp
+    ninja -j7 ot-cli-ftd ot-cli-mtd ot-ncp-ftd ot-ncp-mtd ot-rcp
 
     cd "${OT_SRCDIR}"
 }
