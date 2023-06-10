@@ -32,10 +32,11 @@ set -euxo pipefail
 OT_SRCDIR="$(pwd)"
 readonly OT_SRCDIR
 
-# OpenThread options that are always added to build.
+# OpenThread options that are always added to build first. They can be overridden on the command line.
 OT_OPTIONS=(
     "-DCMAKE_BUILD_TYPE=Debug"
     "-DOT_PLATFORM=external"
+    "-DOT_FULL_LOGS=ON"
 )
 readonly OT_OPTIONS
 
@@ -61,7 +62,7 @@ build()
 main()
 {
     local options=()
-    options+=("$@" "${OT_OPTIONS[@]}")
+    options+=("${OT_OPTIONS[@]}" "$@")
     build "${options[@]}"
 }
 

@@ -28,7 +28,6 @@
 #
 
 OT_OPTIONS=(
-        "-DOT_THREAD_VERSION=1.2"
 )
 readonly OT_OPTIONS
 
@@ -38,10 +37,7 @@ die()
     exit 1
 }
 
-cd openthread || die "Can't cd into openthread directory."
-git checkout f759d163dc4e719bc2dbdf0bc713ea33d51b1819 || die "Can't git checkout v12 codebase."
-cd ..
-rm -rf build || die "Can't remove the ./build directory."
-./script/build ${OT_OPTIONS[@]} || die "Problem invoking ./script/build"
 git submodule update || die "Could not git submodule update"
-cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd_v12 || die "Copy of built FTD binary to ./ot-versions failed"
+rm -rf build || die "Can't remove the ./build directory."
+./script/build "${OT_OPTIONS[@]}" || die "Problem invoking ./script/build"
+cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd || die "Copy of built FTD binary to ./ot-versions failed"

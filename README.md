@@ -12,23 +12,33 @@ After cloning the repo, you must initialize the git submodule.
 $ git submodule update --init
 ```
 
-The submodule is `openthread` with the (latest) openthread main branch code.
+The submodule is `openthread` with (a recent) openthread `main` branch code.
 
 ## Building
 
-### Build using cmake for use in OT-NS
+### Build for use in OT-NS with custom build configuration
 
-Below shows an example default build for use of the binaries in OT-NS simulation.
+Below shows first an example default build for use of the binaries in OT-NS simulation.
+This includes debug logging, for extra debug info that can then be optionally displayed in OT-NS using the 
+`watch` command. The debug logging is also stored in a file, per node.
 
 ```bash
 $ ./script/build
 ```
 
-Below shows an example build for OT-NS with build option OT_FULL_LOGS set to 'ON',
-for extra debug info that can then be optionally displayed in OT-NS using the `watch` command.
+Below shows an example build for OT-NS with build option OT_FULL_LOGS set to 'OFF', to disable the debug logging.
+This helps to speed up the simulation because far less socket communication events are then generated.
 
 ```bash
-$ ./script/build -DOT_FULL_LOGS=ON
+$ ./script/build -DOT_FULL_LOGS=OFF
+```
+
+Below shows an example build for OT-NS with build option OT_CSL_RECEIVER set to 'OFF', to disable the CSL receiver. 
+This is normally enabled for the FTD build, so that it can emulate an MTD SED with CSL. But there may be a specific 
+reason to disable it for an FTD build. (E.g. because a separate MTD build is done with CSL enabled, already.)
+
+```bash
+$ ./script/build -DOT_CSL_RECEIVER=OFF
 ```
 
 After a successful build, the executable files are found in the directory:
@@ -37,21 +47,16 @@ After a successful build, the executable files are found in the directory:
 ./build/bin
 ```
 
+### Build default v1.1, v1.2, v1.3, or v1.\<Latest\> nodes for OT-NS
+
+There are some scripts (`./script/build_*`) for building specific versions of OpenThread nodes for use in OT-NS. 
+There are specific commands in OT-NS to add e.g. v1.1, or v1.2 nodes, all mixed in one simulation.
+
+These build scripts produce executables that are copied into the `ot-versions` directory. 
+
 ## Running
 
-After building, the executables can be copied to an OT-NS working directory for use in OT-NS simulation. 
-This is the preferred way. Also, for a quick test, OT-NS can be started from the binaries directory and 
-then the built `ot-cli-ftd` will be used in the simulation:
-
-```bash
-$ cd build/bin
-$ otns
-> add router x 50 y 50
-1
-Done
-```
-
-Also the executables can be tested on the command line as follows:
+The executables in `bin` can be briefly tested on the command line as follows:
 
 ```bash
 $ cd build/bin
@@ -60,8 +65,24 @@ Usage: ot-cli-ftd <nodeNumber> <OTNS-socket-file>
 $
 ```
 
-This will print a usage message and exit the node. 
+This will print a usage message and exit the node.
 
+The `ot-cli-ftd` is by default used in the OT-NS simulator for all node types except BR. But also `ot-cli-mtd` can be 
+configured for use for MED, SED and SSED.
+
+One way to use the `ot-cli-ftd` is to `cd` to the path where the file is and start OT-NS:
+
+```bash
+$ cd build/bin
+$ otns
+> add router x 50 y 50
+1
+Done
+```
+ 
+Another way is to run OT-NS from the same directory from where it was installed. In this case, it will use 
+the binaries that are built into `./ot-rfsim/ot-versions` which is in the `ot-rfsim` submodule. These binaries can be 
+built using the various `./script/build_*` scripts that are part of this repo.
 
 ## Contributing
 
