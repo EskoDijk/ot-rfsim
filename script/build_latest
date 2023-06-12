@@ -29,12 +29,8 @@
 
 set -euxo pipefail
 
-OT_OPTIONS=(
-)
-readonly OT_OPTIONS
-
 git submodule update
 rm -rf build
-./script/build "${OT_OPTIONS[@]}"
+./script/build
 cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd
 cp ./build/bin/ot-cli-mtd ./ot-versions/ot-cli-mtd
