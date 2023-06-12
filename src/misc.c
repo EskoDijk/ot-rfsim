@@ -66,9 +66,9 @@ void otPlatAssertFail(const char *aFilename, int aLineNumber)
 {
     fprintf(stderr,"assert failed at %s:%d\n", aFilename, aLineNumber);
     fprintf(stderr, "Last sent Event: tp=%i dly=%lu datalen=%u\n",
-                   gLastSentEvent.mEvent, gLastSentEvent.mDelay, gLastSentEvent.mDataLength);
+                   gLastSentEvent.mEvent, (unsigned long)gLastSentEvent.mDelay, gLastSentEvent.mDataLength);
     fprintf(stderr, "Last recv Event: tp=%i dly=%lu datalen=%u\n",
-                   gLastRecvEvent.mEvent, gLastRecvEvent.mDelay, gLastRecvEvent.mDataLength);
+                   gLastRecvEvent.mEvent, (unsigned long)gLastRecvEvent.mDelay, gLastRecvEvent.mDataLength);
     // For debug build, use assert to generate a core dump
     assert(false);
     exit(1);
