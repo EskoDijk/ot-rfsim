@@ -27,17 +27,14 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+set -euxo pipefail
+
 OT_OPTIONS=(
 )
 readonly OT_OPTIONS
 
-die()
-{
-    echo " ** ERROR: $1"
-    exit 1
-}
-
-git submodule update || die "Could not git submodule update"
-rm -rf build || die "Can't remove the ./build directory."
-./script/build "${OT_OPTIONS[@]}" || die "Problem invoking ./script/build"
-cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd || die "Copy of built FTD binary to ./ot-versions failed"
+git submodule update
+rm -rf build
+./script/build "${OT_OPTIONS[@]}"
+cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd
+cp ./build/bin/ot-cli-mtd ./ot-versions/ot-cli-mtd

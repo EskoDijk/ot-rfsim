@@ -27,21 +27,19 @@
 #  POSSIBILITY OF SUCH DAMAGE.
 #
 
+set -euxo pipefail
+
 OT_OPTIONS=(
-        "-DOT_THREAD_VERSION=1.3"
+    "-DOT_THREAD_VERSION=1.3"
 )
 readonly OT_OPTIONS
 
-die()
-{
-    echo " ** ERROR: $1"
-    exit 1
-}
-
-cd openthread || die "Can't cd into openthread directory."
-git checkout thread-reference-20230119 || die "Can't git checkout v13 codebase."
+cd openthread
+git checkout thread-reference-20230119
 cd ..
-rm -rf build || die "Can't remove the ./build directory."
-./script/build ${OT_OPTIONS[@]} || die "Problem invoking ./script/build"
-git submodule update || die "Could not git submodule update"
-cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd_v13 || die "Copy of built FTD binary to ./ot-versions failed"
+rm -rf build
+./script/build ${OT_OPTIONS[@]}
+git submodule update
+cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd_v13
+cp ./build/bin/ot-cli-mtd ./ot-versions/ot-cli-mtd_v13
+rm -rf build
