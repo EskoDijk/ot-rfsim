@@ -32,5 +32,5 @@ set -euxo pipefail
 git submodule update
 rm -rf build
 ./script/build
-cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd
-cp ./build/bin/ot-cli-mtd ./ot-versions/ot-cli-mtd
+cp ./build/bin/ot-cli-?td ./ot-versions/
+cp ./build/bin/ot-rcp ./ot-versions/

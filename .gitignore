@@ -49,4 +49,4 @@ __pycache__
 
 # OT version builds
 ot-versions/ot-cli*
-
+ot-versions/ot-rcp
