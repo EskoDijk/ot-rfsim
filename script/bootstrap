@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#  Copyright (c) 2020-2023, The OpenThread Authors.
+#  Copyright (c) 2017-2023, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -26,8 +26,73 @@
 #  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 #  POSSIBILITY OF SUCH DAMAGE.
 #
+#    Description:
+#      This file installs all needed dependencies and toolchains needed for
+#      example compilation and programming.
+#
 
 set -euxo pipefail
 
-#"$(dirname "$0")"/../openthread/script/bootstrap
-echo 'bootstrap for ot-rfsim completed successfully.'
+install_packages_apt()
+{
+    echo 'Installing toolchain dependencies...'
+
+    # apt-get update and install dependencies
+    apt-get update
+    apt-get --no-install-recommends install -y g++ lsb-release cmake ninja-build shellcheck
+}
+
+install_packages_opkg()
+{
+    echo 'opkg not supported currently' && false
+}
+
+install_packages_rpm()
+{
+    echo 'rpm not supported currently' && false
+}
+
+install_packages_brew()
+{
+    echo 'Installing toolchain dependencies...'
+
+    # add build tools
+    brew install cmake ninja shfmt shellcheck
+
+    # check for gcc for simulation
+    if ! command -v gcc; then
+        echo 'warning: clang/gcc needed for simulation'
+        echo 'warning: please install Command Line Tools from https://developer.apple.com/download/more/'
+    fi
+}
+
+install_packages_source()
+{
+    echo 'source not supported currently' && false
+}
+
+install_packages()
+{
+    PM=source
+    if command -v apt-get; then
+        PM=apt
+    elif command -v rpm; then
+        PM=rpm
+    elif command -v opkg; then
+        PM=opkg
+    elif command -v brew; then
+        PM=brew
+    fi
+    install_packages_$PM
+}
+
+main()
+{
+    if [ "$EUID" -ne 0 ]
+        then echo "Please run as root user, e.g. 'sudo ./script/bootstrap'." && false
+    fi
+    install_packages
+    echo 'bootstrap for ot-rfsim completed successfully.'
+}
+
+main
