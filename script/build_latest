@@ -34,3 +34,9 @@ rm -rf build
 ./script/build
 cp ./build/bin/ot-cli-?td ./ot-versions/
 cp ./build/bin/ot-rcp ./ot-versions/
+
+# build also the '_nologs' version of the executables
+./script/build -DOT_FULL_LOGS=OFF
+cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd_nologs
+cp ./build/bin/ot-cli-mtd ./ot-versions/ot-cli-mtd_nologs
+
