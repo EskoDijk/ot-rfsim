@@ -39,7 +39,7 @@ enum
     SIM_CSL_ACCURACY_PPM             = 1,                               // ppm
     SIM_CSL_UNCERTAINTY_10US         = 10,                              // units of 10 us (ceiling of true uncertainty)
     OT_RADIO_TURNAROUND_TIME_US      = 40,                              // radio's turnaround: differs per radio model
-    OT_RADIO_STARTUP_TIME_US         = 140,                             // Disabled -> active, with channel setting.
+    OT_RADIO_STARTUP_TIME_US         = 140,                             // Disabled -> sleep/active, with channel setting.
     OT_RADIO_RAMPUP_TIME_US          = 40,                              // Sleeping -> Rx/Tx, no channel change.
 };
 

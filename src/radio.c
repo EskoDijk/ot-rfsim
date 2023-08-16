@@ -67,7 +67,7 @@ static uint64_t      sLastReportedRadioEventTime = 0;
 static uint8_t       sOngoingOperationChannel    = kMinChannel;
 static uint64_t      sNextRadioEventTime         = OT_RADIO_STARTUP_TIME_US;
 static uint64_t      sReceiveTimestamp           = 0;
-static RadioSubState sSubState                   = OT_RADIO_SUBSTATE_STARTUP;
+static RadioSubState sSubState                   = OT_RADIO_SUBSTATE_DISABLED;
 static struct RadioCommEventData sLastTxEventData; // metadata about last/ongoing Tx action.
 
 static int8_t   sEnergyScanResult  = OT_RADIO_RSSI_INVALID;
@@ -90,7 +90,6 @@ static otExtAddress   sExtAddress;
 static otShortAddress sShortAddress;
 static otPanId        sPanid;
 static bool           sPromiscuous = false;
-static bool           sTxWait      = false;
 static int8_t         sTxPower     = SIM_TX_POWER_DEFAULT_DBM;
 static int8_t         sCcaEdThresh = SIM_CCA_ED_THRESHOLD_DEFAULT_DBM;
 static int8_t         sLnaGain     = 0;
@@ -279,14 +278,18 @@ void platformRadioInit(void)
 static uint16_t getCslPhase(void)
 {
     // The CSL-Phase-Time is the time between 1) start of MHR of current frame to be sent,
-    // and 2) start of MHR of next frame that will be CSL-received (i.e. sampled).
-    // This is equal to the time between 1) start of preamble of current frame to be sent,
-    // and 2) start of preamble reception of next frame that will be CSL-received.
+    // and 2) start of MHR of next frame that will be CSL-received (i.e. sampled);
+    // - equal to the time between 1) start of preamble of current frame to be sent,
+    // and 2) start of preamble reception of next frame that will be CSL-received;
+    // - equal to the time between 1) end of last symbol of SFD of current frame to be sent,
+    // and 2) end of last symbol of SFD of next frame that will be CSL-received.
     //
-    // Calculation assumes Tx frame will be sent 'now' i.e. start of preamble is now.
-    uint32_t txPreambleStartTime = otPlatAlarmMicroGetNow();
+    // Calculation assumes Tx frame will be sent 'now' i.e. start of first symbol of preamble is now.
+    // That is valid because `getCslPhase()` will be called directly before `radioTransmit()`, so in the
+    // same simulated time instant.
+    uint32_t txSfdEndTime = otPlatAlarmMicroGetNow();
     uint32_t cslPeriodInUs = sCslPeriod * OT_US_PER_TEN_SYMBOLS;
-    uint32_t diff = ((sCslSampleTime % cslPeriodInUs) - (txPreambleStartTime % cslPeriodInUs) + cslPeriodInUs) % cslPeriodInUs;
+    uint32_t diff = ((sCslSampleTime % cslPeriodInUs) - (txSfdEndTime % cslPeriodInUs) + cslPeriodInUs) % cslPeriodInUs;
 
     // phase integer needs to be 'rounded up' in fractional cases. Otherwise, CSL receiver
     // might miss the first part of transmission.
@@ -308,7 +311,6 @@ otError otPlatRadioEnable(otInstance *aInstance)
     if (!otPlatRadioIsEnabled(aInstance))
     {
         setRadioState(OT_RADIO_STATE_SLEEP);
-        setRadioSubState(OT_RADIO_SUBSTATE_STARTUP, OT_RADIO_STARTUP_TIME_US);
     }
 
     return OT_ERROR_NONE;
@@ -354,11 +356,7 @@ otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
 
     if (sState != OT_RADIO_STATE_DISABLED)
     {
-        if (sState == OT_RADIO_STATE_SLEEP) {
-            setRadioSubState(OT_RADIO_SUBSTATE_STARTUP, OT_RADIO_RAMPUP_TIME_US);
-        }
         error                  = OT_ERROR_NONE;
-        sTxWait                = false;
         sReceiveFrame.mChannel = aChannel;
         sCurrentChannel        = aChannel;
         setRadioState(OT_RADIO_STATE_RECEIVE);
@@ -673,7 +671,27 @@ void radioProcessFrame(otInstance *aInstance, otError aError)
 
 bool platformRadioIsTransmitPending(void)
 {
-    return sState == OT_RADIO_STATE_TRANSMIT && !sTxWait;
+    return sState == OT_RADIO_STATE_TRANSMIT && !platformRadioIsTransmitOngoing();
+}
+
+bool platformRadioIsTransmitOngoing(void)
+{
+    return  sSubState == OT_RADIO_SUBSTATE_TX_CCA ||
+            sSubState == OT_RADIO_SUBSTATE_TX_CCA_TO_TX ||
+            sSubState == OT_RADIO_SUBSTATE_TX_FRAME_ONGOING ||
+            sSubState == OT_RADIO_SUBSTATE_TX_TX_TO_RX ||
+            sSubState == OT_RADIO_SUBSTATE_TX_TX_TO_AIFS ||
+            sSubState == OT_RADIO_SUBSTATE_TX_AIFS_WAIT ||
+            sSubState == OT_RADIO_SUBSTATE_TX_ACK_RX_ONGOING;
+}
+
+bool platformRadioIsReceiveOngoing(void)
+{
+    return  sSubState == OT_RADIO_SUBSTATE_RX_FRAME_ONGOING ||
+            sSubState == OT_RADIO_SUBSTATE_RX_AIFS_WAIT ||
+            sSubState == OT_RADIO_SUBSTATE_RX_ACK_TX_ONGOING ||
+            sSubState == OT_RADIO_SUBSTATE_RX_TX_TO_RX ||
+            sSubState == OT_RADIO_SUBSTATE_RX_ENERGY_SCAN;
 }
 
 void otPlatRadioEnableSrcMatch(otInstance *aInstance, bool aEnable)
@@ -986,21 +1004,17 @@ void radioTransmit(struct RadioMessage *aMessage, const struct otRadioFrame *aFr
 
 void radioReceive(otInstance *aInstance, otError aError)
 {
-    bool isAck = otMacFrameIsAck(&sReceiveFrame);
-
     otEXPECT(sState == OT_RADIO_STATE_RECEIVE || sState == OT_RADIO_STATE_TRANSMIT);
 
-    // Record SFD end-of-last-symbol timestamp. The simulator's timestamp indicates start of first symbol of
-    // preamble so we need to adapt to "when SFD was received" (end of last symbol of SFD = start of PHY hdr)
-    sReceiveFrame.mInfo.mRxInfo.mTimestamp = sReceiveTimestamp + OT_RADIO_SHR_DURATION_US;
+    bool isAck = otMacFrameIsAck(&sReceiveFrame);
+    sReceiveFrame.mInfo.mRxInfo.mTimestamp = sReceiveTimestamp;
 
-    if (sTxWait && otMacFrameIsAckRequested(&sTransmitFrame))
+    if (platformRadioIsTransmitOngoing() && otMacFrameIsAckRequested(&sTransmitFrame))
     {
         otError txDoneError = OT_ERROR_NONE;
         // TODO: for Enh-Ack, look at address match too.
         bool isAwaitedAckReceived = isAck && aError == OT_ERROR_NONE &&
                                     otMacFrameGetSequence(&sReceiveFrame) == otMacFrameGetSequence(&sTransmitFrame);
-        sTxWait = false;
         if (!isAwaitedAckReceived)
         {
             txDoneError = OT_ERROR_NO_ACK;
@@ -1043,20 +1057,31 @@ void platformRadioReportStateToSimulator()
         sLastReportedSubState = sSubState;
         sLastReportedRadioEventTime = sNextRadioEventTime;
 
-        // determine the energy-state from subState. Only in very particular substates,
-        // the radio is actively transmitting.
-        uint8_t energyState = sState;
-        if ( sSubState == OT_RADIO_SUBSTATE_TX_FRAME_ONGOING)
-        {
-            energyState = OT_RADIO_STATE_TRANSMIT;
-        }
-        else if ( sSubState == OT_RADIO_SUBSTATE_RX_ACK_TX_ONGOING)
-        {
-            energyState = OT_RADIO_STATE_TRANSMIT;
-        }
-        else if (sState == OT_RADIO_STATE_TRANSMIT)
-        {
-            energyState = OT_RADIO_STATE_RECEIVE;
+        // determine the energy-state from subState. TODO: distinguish more (detailed) energy levels.
+        uint8_t energyState = OT_RADIO_STATE_INVALID;
+        switch(sSubState) {
+            case OT_RADIO_SUBSTATE_READY:
+            case OT_RADIO_SUBSTATE_IFS_WAIT:
+            case OT_RADIO_SUBSTATE_TX_CCA:
+            case OT_RADIO_SUBSTATE_TX_CCA_TO_TX:
+            case OT_RADIO_SUBSTATE_TX_TX_TO_RX:
+            case OT_RADIO_SUBSTATE_TX_TX_TO_AIFS:
+            case OT_RADIO_SUBSTATE_TX_AIFS_WAIT:
+            case OT_RADIO_SUBSTATE_TX_ACK_RX_ONGOING:
+            case OT_RADIO_SUBSTATE_RX_FRAME_ONGOING:
+            case OT_RADIO_SUBSTATE_RX_AIFS_WAIT:
+            case OT_RADIO_SUBSTATE_RX_TX_TO_RX:
+            case OT_RADIO_SUBSTATE_RX_ENERGY_SCAN:
+            case OT_RADIO_SUBSTATE_STARTUP:
+                energyState = OT_RADIO_STATE_RECEIVE;
+                break;
+            case OT_RADIO_SUBSTATE_TX_FRAME_ONGOING:
+            case OT_RADIO_SUBSTATE_RX_ACK_TX_ONGOING:
+                energyState = OT_RADIO_STATE_TRANSMIT;
+                break;
+            default:
+                energyState = OT_RADIO_STATE_SLEEP;
+                break;
         }
 
         stateReport.mChannel     = sOngoingOperationChannel;
@@ -1078,17 +1103,6 @@ void platformRadioReportStateToSimulator()
 
 void setRadioState(otRadioState aState)
 {
-    if (aState != sState)
-    {
-        switch (aState) {
-            case OT_RADIO_STATE_DISABLED:
-                // force the radio to stop, resetting substate. Enabling again would take the startup time.
-                setRadioSubState(OT_RADIO_SUBSTATE_STARTUP, OT_RADIO_STARTUP_TIME_US);
-                break;
-            default:
-                break;
-        }
-    }
     sState = aState;
 }
 
@@ -1107,8 +1121,6 @@ static void setRadioSubState(RadioSubState aState, uint64_t timeToRemainInState)
 static void startCcaForTransmission(otInstance *aInstance)
 {
     OT_UNUSED_VARIABLE(aInstance);
-
-    sTxWait = true;
 
     // send CCA event, wait for simulator to send back the channel sampling result.
     struct RadioCommEventData chanSampleData;
@@ -1141,7 +1153,10 @@ void platformRadioRxStart(otInstance *aInstance, struct RadioCommEventData *aRxP
     {
         setRadioSubState(OT_RADIO_SUBSTATE_RX_FRAME_ONGOING, aRxParams->mDuration + FAILSAFE_TIME_US);
     }
-    sReceiveTimestamp = otPlatTimeGet(); // record SFD timestamp.
+
+    // Record SFD end-of-last-symbol timestamp. The simulator signals start of first symbol of
+    // preamble so we need to adapt to "when SFD was received" (end of last symbol of SFD = start of PHY hdr)
+    sReceiveTimestamp = otPlatTimeGet() + OT_RADIO_SHR_DURATION_US;
 
     exit:
     return;
@@ -1164,6 +1179,8 @@ void platformRadioRxDone(otInstance *aInstance, const uint8_t *aBuf, uint16_t aB
     bool isAckRequested = otMacFrameIsAckRequested(&sReceiveFrame);
     bool isAddressedToMe = otMacFrameDoesAddrMatch(&sReceiveFrame, sPanid, sShortAddress, &sExtAddress);
 
+    radioReceive(aInstance, aRxParams->mError );
+
     if (sSubState == OT_RADIO_SUBSTATE_RX_FRAME_ONGOING && isAckRequested && !isAck && isAddressedToMe)
     {
         // Rx done, need to send Ack. Wait exactly time AIFS before sending out the Ack.
@@ -1182,8 +1199,6 @@ void platformRadioRxDone(otInstance *aInstance, const uint8_t *aBuf, uint16_t aB
         setRadioSubState(OT_RADIO_SUBSTATE_IFS_WAIT, ifsTime);
     }
 
-    radioReceive(aInstance, aRxParams->mError );
-
     exit:
     return;
 }
@@ -1201,7 +1216,6 @@ void platformRadioCcaDone(otInstance *aInstance, struct RadioCommEventData *aCha
     else
     {
         // CCA failure case - channel not clear.
-        sTxWait = false;
         setRadioSubState(OT_RADIO_SUBSTATE_READY, UNDEFINED_TIME_US);
         signalRadioTxDone(aInstance, &sTransmitFrame, NULL, OT_ERROR_CHANNEL_ACCESS_FAILURE);
     }
@@ -1230,7 +1244,8 @@ void platformRadioTxDone(otInstance *aInstance, struct RadioCommEventData *aTxDo
         }
         else
         {
-            // Ack frame is to be sent, move towards AIFS and set radio to transmit.
+            // Ack frame is to be received, change radio from Tx to Rx mode; move into AIFS wait period.
+            // TODO: could let radio sleep during part of AIFS, to save energy.
             setRadioSubState(OT_RADIO_SUBSTATE_TX_TX_TO_AIFS, OT_RADIO_TURNAROUND_TIME_US);
         }
     }
@@ -1241,10 +1256,10 @@ void platformRadioProcess(otInstance *aInstance, const fd_set *aReadFdSet, const
     OT_UNUSED_VARIABLE(aReadFdSet);
     OT_UNUSED_VARIABLE(aWriteFdSet);
 
-    // if stack wants to transmit a frame while radio is busy receiving one: signal CCA failure directly.
+    // if stack wants to transmit a frame while radio is busy with Rx: signal CCA failure directly.
     // there is no need to sample the radio channel in this case. Also do not wait until the end of Rx period to
     // signal the error, otherwise multiple radio nodes become sync'ed on their CCA period that would follow.
-    if (platformRadioIsTransmitPending() && sSubState == OT_RADIO_SUBSTATE_RX_FRAME_ONGOING )
+    if (platformRadioIsTransmitPending() && platformRadioIsReceiveOngoing())
     {
         signalRadioTxDone(aInstance, &sTransmitFrame, NULL, OT_ERROR_CHANNEL_ACCESS_FAILURE);
     }
@@ -1256,16 +1271,39 @@ void platformRadioProcess(otInstance *aInstance, const fd_set *aReadFdSet, const
         uint64_t ifsTime = (sTransmitFrame.mLength > OT_RADIO_aMaxSifsFrameSize) ? OT_RADIO_LIFS_TIME_US : OT_RADIO_SIFS_TIME_US;
         switch (sSubState)
         {
-            case OT_RADIO_SUBSTATE_STARTUP: // when radio/node starts.
-                setRadioSubState(OT_RADIO_SUBSTATE_READY, UNDEFINED_TIME_US);
+            case OT_RADIO_SUBSTATE_DISABLED: // when radio circuitry is in disabled mode.
+                if (sState != OT_RADIO_STATE_DISABLED){
+                    setRadioSubState(OT_RADIO_SUBSTATE_STARTUP, OT_RADIO_STARTUP_TIME_US);
+                }
                 break;
 
-            case OT_RADIO_SUBSTATE_READY:  // ready/idle substate: decide when to start transmitting frame.
+            case OT_RADIO_SUBSTATE_SLEEP: // when radio is in sleep mode.
+                if (sState == OT_RADIO_STATE_RECEIVE || platformRadioIsTransmitPending()) {
+                    setRadioSubState(OT_RADIO_SUBSTATE_STARTUP, OT_RADIO_STARTUP_TIME_US);
+                } else if (sState == OT_RADIO_STATE_DISABLED){
+                    setRadioSubState(OT_RADIO_SUBSTATE_DISABLED, UNDEFINED_TIME_US);
+                }
+                break;
+
+            case OT_RADIO_SUBSTATE_STARTUP: // at end of radio startup (coming either from Sleep or from Disabled).
+                if (sState == OT_RADIO_STATE_SLEEP) {
+                    setRadioSubState(OT_RADIO_SUBSTATE_SLEEP, UNDEFINED_TIME_US);
+                }else {
+                    setRadioSubState(OT_RADIO_SUBSTATE_READY, UNDEFINED_TIME_US);
+                }
+                break;
+
+            case OT_RADIO_SUBSTATE_READY:  // in ready/idle substate: decide when to start transmitting frame.
                 sOngoingOperationChannel = sCurrentChannel;
                 if (platformRadioIsTransmitPending())
                 {
                     setRadioSubState(OT_RADIO_SUBSTATE_TX_CCA, OT_RADIO_CCA_TIME_US + FAILSAFE_TIME_US);
                     startCcaForTransmission(aInstance);
+                }else if (sState == OT_RADIO_STATE_SLEEP){
+                    // radio to sleep when nothing to transmit and sleep mode was requested.
+                    setRadioSubState(OT_RADIO_SUBSTATE_SLEEP, UNDEFINED_TIME_US);
+                }else if (sState == OT_RADIO_STATE_DISABLED){
+                    setRadioSubState(OT_RADIO_SUBSTATE_DISABLED, UNDEFINED_TIME_US);
                 }
                 break;
 
@@ -1273,10 +1311,9 @@ void platformRadioProcess(otInstance *aInstance, const fd_set *aReadFdSet, const
                 // CCA period timed out without CCA sample from simulator. Normally should not happen.
                 signalRadioTxDone(aInstance, &sTransmitFrame, NULL, OT_ERROR_CHANNEL_ACCESS_FAILURE);
                 setRadioSubState(OT_RADIO_SUBSTATE_READY, UNDEFINED_TIME_US);
-                sTxWait = false;
                 break;
 
-            case OT_RADIO_SUBSTATE_TX_CCA_TO_TX:
+            case OT_RADIO_SUBSTATE_TX_CCA_TO_TX: // at end of transition from end-of-CCA to Tx
                 radioSendMessage(aInstance); // Creates the sLastTxEventData.
                 setRadioSubState(OT_RADIO_SUBSTATE_TX_FRAME_ONGOING, sLastTxEventData.mDuration + FAILSAFE_TIME_US);
                 break;
@@ -1287,6 +1324,7 @@ void platformRadioProcess(otInstance *aInstance, const fd_set *aReadFdSet, const
 
             case OT_RADIO_SUBSTATE_TX_TX_TO_RX:
                 // no Ack was requested
+                setRadioState(OT_RADIO_STATE_RECEIVE);
                 setRadioSubState(OT_RADIO_SUBSTATE_IFS_WAIT, ifsTime - OT_RADIO_TURNAROUND_TIME_US);
                 break;
 
@@ -1300,22 +1338,20 @@ void platformRadioProcess(otInstance *aInstance, const fd_set *aReadFdSet, const
                 // so go to ready state and fail the Tx.
                 setRadioSubState(OT_RADIO_SUBSTATE_READY, UNDEFINED_TIME_US);
                 signalRadioTxDone(aInstance, &sTransmitFrame, NULL, OT_ERROR_NO_ACK);
-                sTxWait = false;
                 break;
 
             case OT_RADIO_SUBSTATE_TX_ACK_RX_ONGOING:
                 // wait until Ack receive is done. In platformRadioRxDone() the next state is selected.
-                // if we get here on the timer, this ongoing Ack wasn't received properly.
+                // if we get here on the timer, the presumed Ack frame reception was never finished.
                 setRadioSubState(OT_RADIO_SUBSTATE_IFS_WAIT, ifsTime);
                 signalRadioTxDone(aInstance, &sTransmitFrame, NULL, OT_ERROR_NO_ACK);
                 break;
 
             case OT_RADIO_SUBSTATE_IFS_WAIT:
                 setRadioSubState(OT_RADIO_SUBSTATE_READY, UNDEFINED_TIME_US);
-                sTxWait = false;
                 break;
 
-                // below is the state machine for Rx states.
+                // --- Below is the state machine for Rx states.
             case OT_RADIO_SUBSTATE_RX_FRAME_ONGOING:
                 // wait until frame Rx is done. In platformRadioRxDone() the next state is selected.
                 // below is a timer-based failsafe in case the RxDone message from simulator was never received.
@@ -1330,12 +1366,12 @@ void platformRadioProcess(otInstance *aInstance, const fd_set *aReadFdSet, const
                 break;
 
             case OT_RADIO_SUBSTATE_RX_ACK_TX_ONGOING:
-                // at end of Ack transmission.
+                // at end of Ack transmission by receiver.
                 setRadioSubState(OT_RADIO_SUBSTATE_RX_TX_TO_RX, OT_RADIO_TURNAROUND_TIME_US);
                 break;
 
             case OT_RADIO_SUBSTATE_RX_TX_TO_RX:
-                // After Ack Tx.
+                // After Ack Tx by receiver.
                 setRadioSubState(OT_RADIO_SUBSTATE_IFS_WAIT, OT_RADIO_TURNAROUND_TIME_US);
                 break;
 
@@ -1353,4 +1389,3 @@ void platformRadioProcess(otInstance *aInstance, const fd_set *aReadFdSet, const
         }
     }
 }
-
