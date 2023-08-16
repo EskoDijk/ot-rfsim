@@ -59,6 +59,8 @@ struct RadioMessage
 
 /**
  * The sub-states of the virtual-time simulated radio while it is in Tx or Rx OT state.
+ * New sub-state enum values should only be added at the end for compatibility reasons. Also new sub-states
+ * need to be added in OT-NS, types/types.go.
  */
 typedef enum
 {
@@ -78,6 +80,8 @@ typedef enum
     OT_RADIO_SUBSTATE_RX_ENERGY_SCAN,
     OT_RADIO_SUBSTATE_STARTUP,
     OT_RADIO_SUBSTATE_INVALID,
+    OT_RADIO_SUBSTATE_SLEEP,
+    OT_RADIO_SUBSTATE_DISABLED,
 } RadioSubState;
 
 #endif // PLATFORM_RFSIM_RADIO_H

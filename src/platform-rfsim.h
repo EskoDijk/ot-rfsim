@@ -176,6 +176,16 @@ void platformExit(int exitCode);
 bool platformRadioIsTransmitPending(void);
 
 /**
+ * This function checks if radio Tx is currently ongoing. This includes the entire
+ * process of waiting for a received Ack of the transmitted frame (if applicable).
+ *
+ * @returns Whether radio frame Tx is ongoing (true) or not (false).
+ *
+ */
+bool platformRadioIsTransmitOngoing(void);
+bool platformRadioIsReceiveOngoing(void);
+
+/**
  * This function lets the radio report its state to the simulator, for bookkeeping and
  * energy-monitoring purposes.
  *
