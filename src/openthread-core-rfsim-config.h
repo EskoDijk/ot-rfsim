@@ -109,9 +109,10 @@
  * @def OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
  *
  * Define minimum schedule-request ahead time for Tx of CSL transmitter, in microseconds.
+ * Includes radio startup Sleep->Tx, SHR time duration, CCA time duration, and Turnaround time.
  */
 #ifndef OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US
-#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US OT_RADIO_STARTUP_TIME_US
+#define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US (OT_RADIO_RAMPUP_TIME_US + 5*32 + 128 + OT_RADIO_TURNAROUND_TIME_US)
 #endif
 
 #ifndef OPENTHREAD_CONFIG_JOINER_ENABLE

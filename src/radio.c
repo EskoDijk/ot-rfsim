@@ -283,15 +283,17 @@ static uint16_t getCslPhase(void)
     // This is equal to the time between 1) start of preamble of current frame to be sent,
     // and 2) start of preamble reception of next frame that will be CSL-received.
     //
-    // Calculation assumes Tx frame will be sent 'now' i.e. start of preamble is now.
-    uint32_t txPreambleStartTime = otPlatAlarmMicroGetNow();
+    // Calculation assumes Tx frame will be sent 'now' i.e. start of first symbol of preamble is now.
+    // That is valid because `getCslPhase()` will be called directly before `radioTransmit()`, so in the
+    // same simulated time instant.
+    uint32_t txSfdEndTime = otPlatAlarmMicroGetNow() + OT_RADIO_SHR_DURATION_US;
     uint32_t cslPeriodInUs = sCslPeriod * OT_US_PER_TEN_SYMBOLS;
-    uint32_t diff = ((sCslSampleTime % cslPeriodInUs) - (txPreambleStartTime % cslPeriodInUs) + cslPeriodInUs) % cslPeriodInUs;
+    uint32_t diff = ((sCslSampleTime % cslPeriodInUs) - (txSfdEndTime % cslPeriodInUs) + cslPeriodInUs) % cslPeriodInUs;
 
-    // phase integer needs to be 'rounded up' in fractional cases. Otherwise, CSL receiver
-    // might miss the first part of transmission.
-    if ( diff % OT_US_PER_TEN_SYMBOLS > 0)
-        diff += OT_US_PER_TEN_SYMBOLS;
+    // below division to get the phase integer as multiples of 160us causes an error w.r.t. the true sampling time
+    // which is in [0,159] us range. The below shift of `diff` moves that error into the [-80, 79] us range.
+    // Platform CSL uncertainty is set to '9' (90 us) to accomodate this effect.
+    diff += OT_US_PER_TEN_SYMBOLS/2;
     return (uint16_t)( diff / OT_US_PER_TEN_SYMBOLS);
 }
 #endif
@@ -990,9 +992,7 @@ void radioReceive(otInstance *aInstance, otError aError)
 
     otEXPECT(sState == OT_RADIO_STATE_RECEIVE || sState == OT_RADIO_STATE_TRANSMIT);
 
-    // Record SFD end-of-last-symbol timestamp. The simulator's timestamp indicates start of first symbol of
-    // preamble so we need to adapt to "when SFD was received" (end of last symbol of SFD = start of PHY hdr)
-    sReceiveFrame.mInfo.mRxInfo.mTimestamp = sReceiveTimestamp + OT_RADIO_SHR_DURATION_US;
+    sReceiveFrame.mInfo.mRxInfo.mTimestamp = sReceiveTimestamp;
 
     if (sTxWait && otMacFrameIsAckRequested(&sTransmitFrame))
     {
@@ -1141,7 +1141,10 @@ void platformRadioRxStart(otInstance *aInstance, struct RadioCommEventData *aRxP
     {
         setRadioSubState(OT_RADIO_SUBSTATE_RX_FRAME_ONGOING, aRxParams->mDuration + FAILSAFE_TIME_US);
     }
-    sReceiveTimestamp = otPlatTimeGet(); // record SFD timestamp.
+
+    // Record SFD end-of-last-symbol timestamp. The simulator signals start of first symbol of
+    // preamble is "now" so we need to adapt to "when SFD was received" (end of last symbol of SFD = start of PHY hdr)
+    sReceiveTimestamp = otPlatTimeGet() + OT_RADIO_SHR_DURATION_US;
 
     exit:
     return;
@@ -1241,10 +1244,12 @@ void platformRadioProcess(otInstance *aInstance, const fd_set *aReadFdSet, const
     OT_UNUSED_VARIABLE(aReadFdSet);
     OT_UNUSED_VARIABLE(aWriteFdSet);
 
-    // if stack wants to transmit a frame while radio is busy receiving one: signal CCA failure directly.
+    // if stack wants to transmit a frame while radio is busy receiving: signal CCA failure directly.
     // there is no need to sample the radio channel in this case. Also do not wait until the end of Rx period to
     // signal the error, otherwise multiple radio nodes become sync'ed on their CCA period that would follow.
-    if (platformRadioIsTransmitPending() && sSubState == OT_RADIO_SUBSTATE_RX_FRAME_ONGOING )
+    if (platformRadioIsTransmitPending() && (sSubState == OT_RADIO_SUBSTATE_RX_FRAME_ONGOING ||
+                                             sSubState == OT_RADIO_SUBSTATE_RX_ACK_TX_ONGOING ||
+                                             sSubState == OT_RADIO_SUBSTATE_RX_AIFS_WAIT))
     {
         signalRadioTxDone(aInstance, &sTransmitFrame, NULL, OT_ERROR_CHANNEL_ACCESS_FAILURE);
     }
