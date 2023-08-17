@@ -286,6 +286,9 @@ static uint16_t getCslPhase(void)
     // Calculation assumes Tx frame will be sent 'now' i.e. start of first symbol of preamble is now.
     // That is valid because `getCslPhase()` will be called directly before `radioTransmit()`, so in the
     // same simulated time instant.
+    //
+    // Because `sCslSampleTime` refers to the end of last symbol of SFD, the `txSfdEndTime` is
+    // calculated to that same reference.
     uint32_t txSfdEndTime = otPlatAlarmMicroGetNow() + OT_RADIO_SHR_DURATION_US;
     uint32_t cslPeriodInUs = sCslPeriod * OT_US_PER_TEN_SYMBOLS;
     uint32_t diff = ((sCslSampleTime % cslPeriodInUs) - (txSfdEndTime % cslPeriodInUs) + cslPeriodInUs) % cslPeriodInUs;
