@@ -287,11 +287,11 @@ static uint16_t getCslPhase(void)
     // That is valid because `getCslPhase()` will be called directly before `radioTransmit()`, so in the
     // same simulated time instant.
     //
-    // Because `sCslSampleTime` refers to the end of last symbol of SFD, the `txSfdEndTime` is
+    // Because `sCslSampleTime` refers to the start of 1st symbol of MHR, the `txSfdEndTime` is
     // calculated to that same reference.
-    uint32_t txSfdEndTime = otPlatAlarmMicroGetNow() + OT_RADIO_SHR_DURATION_US;
+    uint32_t txMhrStartTime = otPlatAlarmMicroGetNow() + OT_RADIO_SHR_PHR_DURATION_US;
     uint32_t cslPeriodInUs = sCslPeriod * OT_US_PER_TEN_SYMBOLS;
-    uint32_t diff = ((sCslSampleTime % cslPeriodInUs) - (txSfdEndTime % cslPeriodInUs) + cslPeriodInUs) % cslPeriodInUs;
+    uint32_t diff = ((sCslSampleTime % cslPeriodInUs) - (txMhrStartTime % cslPeriodInUs) + cslPeriodInUs) % cslPeriodInUs;
 
     // below division to get the phase integer as multiples of 160us causes an error w.r.t. the true sampling time
     // which is in [0,159] us range. The below shift of `diff` moves that error into the [-80, 79] us range.
