@@ -293,10 +293,13 @@ static uint16_t getCslPhase(void)
     uint32_t cslPeriodInUs = sCslPeriod * OT_US_PER_TEN_SYMBOLS;
     uint32_t diff = ((sCslSampleTime % cslPeriodInUs) - (txMhrStartTime % cslPeriodInUs) + cslPeriodInUs) % cslPeriodInUs;
 
-    // below division to get the phase integer as multiples of 160us causes an error w.r.t. the true sampling time
-    // which is in [0,159] us range. The below shift of `diff` moves that error into the [-80, 79] us range.
-    // Platform CSL uncertainty is set to '9' (90 us) to accomodate this effect.
-    diff += OT_US_PER_TEN_SYMBOLS/2;
+    // phase integer needs to be 'rounded up' in fractional cases. Otherwise, CSL Receiver
+    // might miss the first part of transmission because the CSL Transmitter could then be early.
+    // The platform config parameter `OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER` is used to extend
+    // the CSL sampling window with the extra time needed (up to 159 us) since the CSL Transmitter
+    // will now be typically sending the frame later than the actual CSL sample time.
+    if ( diff % OT_US_PER_TEN_SYMBOLS > 0)
+        diff += OT_US_PER_TEN_SYMBOLS;
     return (uint16_t)( diff / OT_US_PER_TEN_SYMBOLS);
 }
 #endif
@@ -1067,6 +1070,7 @@ void platformRadioReportStateToSimulator()
         stateReport.mSubState    = sSubState;
         stateReport.mTxPower     = sTxPower;
         stateReport.mState       = sState; // also include the OT radio state.
+        stateReport.mRadioTime   = otPlatTimeGet();
 
         // determine next radio-event time, so that simulator can guarantee this node will
         // execute again at that time.

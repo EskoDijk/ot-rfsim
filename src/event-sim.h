@@ -92,10 +92,11 @@ OT_TOOL_PACKED_BEGIN
 struct RadioStateEventData
 {
     uint8_t  mChannel;
-    int8_t   mTxPower;  // only used when mEnergyState == OT_RADIO_STATE_TRANSMIT
+    int8_t   mTxPower;  // only valid when mEnergyState == OT_RADIO_STATE_TRANSMIT
     uint8_t  mEnergyState; // energy-state of radio (disabled, sleep, actively Tx, actively Rx)
     uint8_t  mSubState;
     uint8_t  mState; // OT state of radio (disabled, sleep, Tx, Rx)
+    uint64_t mRadioTime; // the radio's time otPlatRadioGetNow()
 } OT_TOOL_PACKED_END;
 
 #define EVENT_TO_STRING(evt)

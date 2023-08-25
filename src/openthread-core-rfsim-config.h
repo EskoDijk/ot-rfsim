@@ -115,6 +115,18 @@
 #define OPENTHREAD_CONFIG_MAC_CSL_REQUEST_AHEAD_US (RFSIM_RAMPUP_TIME_US + 5*32 + 128 + RFSIM_TURNAROUND_TIME_US)
 #endif
 
+/**
+ * @def OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER
+ *
+ * The minimum time (in microseconds) after the MHR start that the radio should
+ * be in receive state and NOT switched back to sleep state (using
+ * `otPlatRadioSleep()`).
+ * TODO lower the given value for RFSIM platform, once reliably working.
+ */
+#ifndef OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER
+#define OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER ((127 + 6 + 39) * 32)
+#endif
+
 #ifndef OPENTHREAD_CONFIG_JOINER_ENABLE
 #define OPENTHREAD_CONFIG_JOINER_ENABLE 1
 #endif
