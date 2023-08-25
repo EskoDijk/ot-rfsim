@@ -1247,15 +1247,15 @@ void platformRadioProcess(otInstance *aInstance, const fd_set *aReadFdSet, const
     OT_UNUSED_VARIABLE(aReadFdSet);
     OT_UNUSED_VARIABLE(aWriteFdSet);
 
-    // if stack wants to transmit a frame while radio is busy receiving: signal an 'abort' error.
+    // if stack wants to transmit a frame while radio is busy receiving: signal CCA failure directly.
     // there is no need to sample the radio channel in this case. Also do not wait until the end of Rx period to
     // signal the error, otherwise multiple radio nodes become sync'ed on their CCA period that would follow.
-    // The 'abort' error is not counted as a CCA failure in the node's statistics since no actual CCA was done.
+    // An 'abort' OT error is not used here because it causes pings to be dropped.
     if (platformRadioIsTransmitPending() && (sSubState == RFSIM_RADIO_SUBSTATE_RX_FRAME_ONGOING ||
                                              sSubState == RFSIM_RADIO_SUBSTATE_RX_ACK_TX_ONGOING ||
                                              sSubState == RFSIM_RADIO_SUBSTATE_RX_AIFS_WAIT))
     {
-        signalRadioTxDone(aInstance, &sTransmitFrame, NULL, OT_ERROR_ABORT);
+        signalRadioTxDone(aInstance, &sTransmitFrame, NULL, OT_ERROR_CHANNEL_ACCESS_FAILURE);
     }
 
     // Tx/Rx state machine. Execute time and data based state transitions for substate.
