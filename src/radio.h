@@ -32,7 +32,7 @@
 #include <openthread/platform/radio.h>
 #include "radio-parameters.h"
 
-#define FAILSAFE_TIME_US 4
+#define FAILSAFE_TIME_US 1
 
 // IEEE 802.15.4 related parameters. See radio-parameters.h for radio-model-specific parameters.
 enum
