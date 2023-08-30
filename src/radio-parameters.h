@@ -30,15 +30,16 @@
 #define OT_RFSIM_RADIO_PARAMETERS_H
 
 // Custom parameters for the simulated RFSIM radio, which may vary over radio vendors while still
-// being standards compliant. See radio.h for further parameters.
+// being standards compliant. See radio.h for further parameters. The constants with DEFAULT in
+// the name are default values on startup that can be modified in the CLI.
 enum
 {
     RFSIM_RECEIVE_SENSITIVITY_DBM      = -100,  // dBm
-    RFSIM_CCA_ED_THRESHOLD_DEFAULT_DBM = -91,   // dBm, must be < 10 dB above rx sensitivity, default
-    RFSIM_TX_POWER_DEFAULT_DBM         = 0,     // dBm, default (modifiable by CLI)
-    RFSIM_CSL_ACCURACY_PPM             = 1,     // ppm
-    RFSIM_CSL_UNCERTAINTY_10US         = 9,     // units of 10 us (ceiling of true uncertainty)
-    RFSIM_TURNAROUND_TIME_US           = 40,    // radio turnaround time (us)
+    RFSIM_CCA_ED_THRESHOLD_DEFAULT_DBM = -92,   // dBm, must be < 10 dB above rx sensitivity, default
+    RFSIM_TX_POWER_DEFAULT_DBM         = 0,     // dBm, default
+    RFSIM_CSL_ACCURACY_PPM             = 20,    // ppm (both in + or - direction)
+    RFSIM_CSL_UNCERTAINTY_10US         = 10,     // units of 10 us (ceiling of true uncertainty)
+    RFSIM_TURNAROUND_TIME_US           = 40,    // radio turnaround time (us) between Rx and Tx
     RFSIM_STARTUP_TIME_US              = 140,   // Disabled -> Enabled time (us)
     RFSIM_RAMPUP_TIME_US               = 40,    // Sleeping -> Ready time (us)
 };
