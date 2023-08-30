@@ -29,7 +29,8 @@
 /**
  * @file
  *   This file includes the RFSIM platform's compile-time configuration constants
- *   for OpenThread. (All OPENTHREAD_CONFIG_* defines)
+ *   for OpenThread. (All OPENTHREAD_CONFIG_* defines.) It is based on the simulated
+ *   radio constants that are found in "radio-parameters.h".
  */
 
 #ifndef OPENTHREAD_CORE_RFSIM_CONFIG_H_
@@ -121,10 +122,14 @@
  * The minimum time (in microseconds) after the MHR start that the radio should
  * be in receive state and NOT switched back to sleep state (using
  * `otPlatRadioSleep()`).
- * TODO lower the given value for RFSIM platform, once reliably working.
+ *
+ * For the RFSIM platform, it is currently set at 160 us, to include the variable
+ * 0-159 quantization error due to CSL phase report in CSL IEs. That's because
+ * due to the quant error, the CSL Transmitter may be up to 159 us "late" in
+ * transmitting the frame during the CSL sampling window.
  */
 #ifndef OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER
-#define OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER ((127 + 6 + 39) * 32)
+#define OPENTHREAD_CONFIG_MIN_RECEIVE_ON_AFTER 160
 #endif
 
 #ifndef OPENTHREAD_CONFIG_JOINER_ENABLE
@@ -268,7 +273,8 @@
 /**
  * @def OPENTHREAD_CONFIG_MLE_MAX_CHILDREN
  *
- * The maximum number of children for a Router. Default is the minimum required for a certified device.
+ * The maximum number of children for a Router. Default is the minimum required for a
+ * certified device, which is 10.
  *
  */
 #ifndef OPENTHREAD_CONFIG_MLE_MAX_CHILDREN

@@ -49,6 +49,7 @@
 static void setRadioSubState(RadioSubState aState, uint64_t timeToRemainInState);
 static void startCcaForTransmission(otInstance *aInstance);
 static void signalRadioTxDone(otInstance *aInstance, otRadioFrame *aFrame, otRadioFrame *aAckFrame, otError aError);
+static void applyRadioDelayedSleep();
 void radioSendMessage(otInstance *aInstance);
 void radioTransmit(struct RadioMessage *aMessage, const struct otRadioFrame *aFrame);
 void setRadioState(otRadioState aState);
@@ -91,6 +92,7 @@ static otShortAddress sShortAddress;
 static otPanId        sPanid;
 static bool           sPromiscuous = false;
 static bool           sTxWait      = false;
+static bool           sDelaySleep  = false;
 static int8_t         sTxPower     = RFSIM_TX_POWER_DEFAULT_DBM;
 static int8_t         sCcaEdThresh = RFSIM_CCA_ED_THRESHOLD_DEFAULT_DBM;
 static int8_t         sLnaGain     = 0;
@@ -315,6 +317,7 @@ otError otPlatRadioEnable(otInstance *aInstance)
 {
     if (!otPlatRadioIsEnabled(aInstance))
     {
+        sDelaySleep = false;
         setRadioState(OT_RADIO_STATE_SLEEP);
         setRadioSubState(RFSIM_RADIO_SUBSTATE_STARTUP, RFSIM_STARTUP_TIME_US);
     }
@@ -329,6 +332,7 @@ otError otPlatRadioDisable(otInstance *aInstance)
     otEXPECT(otPlatRadioIsEnabled(aInstance));
     otEXPECT_ACTION(sState == OT_RADIO_STATE_SLEEP, error = OT_ERROR_INVALID_STATE);
 
+    sDelaySleep = false;
     setRadioState(OT_RADIO_STATE_DISABLED);
 
     exit:
@@ -343,9 +347,15 @@ otError otPlatRadioSleep(otInstance *aInstance)
 
     otError error = OT_ERROR_INVALID_STATE;
 
-    if (sState == OT_RADIO_STATE_SLEEP || sState == OT_RADIO_STATE_RECEIVE)
+    if (sSubState == RFSIM_RADIO_SUBSTATE_RX_FRAME_ONGOING || sSubState == RFSIM_RADIO_SUBSTATE_RX_ACK_TX_ONGOING
+    || sSubState == RFSIM_RADIO_SUBSTATE_RX_AIFS_WAIT) {
+        error       = OT_ERROR_BUSY;
+        sDelaySleep = true;
+    }
+    else if (sState == OT_RADIO_STATE_SLEEP || sState == OT_RADIO_STATE_RECEIVE)
     {
-        error  = OT_ERROR_NONE;
+        error       = OT_ERROR_NONE;
+        sDelaySleep = false;
         setRadioState(OT_RADIO_STATE_SLEEP);
     }
 
@@ -362,11 +372,12 @@ otError otPlatRadioReceive(otInstance *aInstance, uint8_t aChannel)
 
     if (sState != OT_RADIO_STATE_DISABLED)
     {
-        if (sState == OT_RADIO_STATE_SLEEP) {
+        if (sState == OT_RADIO_STATE_SLEEP && sSubState != RFSIM_RADIO_SUBSTATE_STARTUP) {
             setRadioSubState(RFSIM_RADIO_SUBSTATE_STARTUP, RFSIM_RAMPUP_TIME_US);
         }
         error                  = OT_ERROR_NONE;
         sTxWait                = false;
+        sDelaySleep            = false;
         sReceiveFrame.mChannel = aChannel;
         sCurrentChannel        = aChannel;
         setRadioState(OT_RADIO_STATE_RECEIVE);
@@ -387,6 +398,7 @@ otError otPlatRadioTransmit(otInstance *aInstance, otRadioFrame *aFrame)
     if (sState == OT_RADIO_STATE_RECEIVE)
     {
         error           = OT_ERROR_NONE;
+        sDelaySleep     = false;
         sCurrentChannel = aFrame->mChannel;
         setRadioState(OT_RADIO_STATE_TRANSMIT);
     }
@@ -1052,15 +1064,11 @@ void platformRadioReportStateToSimulator()
         // determine the energy-state from subState. Only in very particular substates,
         // the radio is actively transmitting.
         uint8_t energyState = sState;
-        if (sSubState == RFSIM_RADIO_SUBSTATE_TX_FRAME_ONGOING)
+        if (sSubState == RFSIM_RADIO_SUBSTATE_TX_FRAME_ONGOING || sSubState == RFSIM_RADIO_SUBSTATE_RX_ACK_TX_ONGOING)
         {
             energyState = OT_RADIO_STATE_TRANSMIT;
         }
-        else if (sSubState == RFSIM_RADIO_SUBSTATE_RX_ACK_TX_ONGOING)
-        {
-            energyState = OT_RADIO_STATE_TRANSMIT;
-        }
-        else if (sState == OT_RADIO_STATE_TRANSMIT)
+        else if (sState == OT_RADIO_STATE_TRANSMIT || sSubState == RFSIM_RADIO_SUBSTATE_RX_FRAME_ONGOING)
         {
             energyState = OT_RADIO_STATE_RECEIVE;
         }
@@ -1080,6 +1088,13 @@ void platformRadioReportStateToSimulator()
             delayUntilNextRadioState = sNextRadioEventTime - otPlatTimeGet();
         }
         otSimSendRadioStateEvent(&stateReport, delayUntilNextRadioState);
+    }
+}
+
+static void applyRadioDelayedSleep() {
+    if (sDelaySleep) {
+        setRadioState(OT_RADIO_STATE_SLEEP);
+        sDelaySleep = false;
     }
 }
 
@@ -1183,6 +1198,7 @@ void platformRadioRxDone(otInstance *aInstance, const uint8_t *aBuf, uint16_t aB
     {
         // Rx done, but no Ack is sent. Wait at least turnaround time before I'm ready to Tx (if needed).
         setRadioSubState(RFSIM_RADIO_SUBSTATE_IFS_WAIT, RFSIM_TURNAROUND_TIME_US);
+        applyRadioDelayedSleep();
     }
     else if (sSubState == RFSIM_RADIO_SUBSTATE_TX_ACK_RX_ONGOING)
     {
@@ -1345,10 +1361,11 @@ void platformRadioProcess(otInstance *aInstance, const fd_set *aReadFdSet, const
             case RFSIM_RADIO_SUBSTATE_RX_ACK_TX_ONGOING:
                 // at end of Ack transmission.
                 setRadioSubState(RFSIM_RADIO_SUBSTATE_RX_TX_TO_RX, RFSIM_TURNAROUND_TIME_US);
+                applyRadioDelayedSleep();
                 break;
 
             case RFSIM_RADIO_SUBSTATE_RX_TX_TO_RX:
-                // After Ack Tx.
+                // After Ack Tx and transition back to Rx.
                 setRadioSubState(RFSIM_RADIO_SUBSTATE_IFS_WAIT, RFSIM_TURNAROUND_TIME_US);
                 break;
 
