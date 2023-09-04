@@ -49,8 +49,7 @@ void otSimSendSleepEvent(void)
     struct Event event;
     event.mDelay      = platformAlarmGetNext();
     event.mEvent      = OT_SIM_EVENT_ALARM_FIRED;
-    event.mDataLength = sizeof(uint64_t);
-    memcpy(event.mData, &gLastAlarmEventId, sizeof(uint64_t));
+    event.mDataLength = 0;
 
     otSimSendEvent(&event);
 }
@@ -140,6 +139,7 @@ void otSimSendNodeInfoEvent(uint32_t nodeId) {
 
 void otSimSendEvent(struct Event *aEvent)
 {
+    aEvent->mMsgId = gLastMsgId;
     gLastSentEvent = *aEvent;
 
     if (gSockFd == 0)   // don't send events if socket invalid.

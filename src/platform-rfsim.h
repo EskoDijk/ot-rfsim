@@ -70,9 +70,9 @@
 extern uint32_t gNodeId;
 
 /**
- * ID of last received Alarm event from simulator, or 0 if no ID yet received.
+ * MsgId of last received event from simulator, or 0 if no MsgId yet received.
  */
-extern uint64_t gLastAlarmEventId;
+extern uint64_t gLastMsgId;
 
 /**
  * State of requested termination of this node process.

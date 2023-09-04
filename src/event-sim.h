@@ -67,6 +67,7 @@ struct EventHeader
 {
     uint64_t mDelay;
     uint8_t  mEvent;
+    uint64_t mMsgId;
     uint16_t mDataLength;
 } OT_TOOL_PACKED_END;
 
@@ -75,6 +76,7 @@ struct Event
 {
     uint64_t mDelay;
     uint8_t  mEvent;
+    uint64_t mMsgId;
     uint16_t mDataLength;
     uint8_t  mData[OT_EVENT_DATA_MAX_SIZE];
 } OT_TOOL_PACKED_END;

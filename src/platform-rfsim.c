@@ -50,7 +50,7 @@
 
 extern int gSockFd;
 
-uint64_t gLastAlarmEventId = 0;
+uint64_t gLastMsgId = 0;
 struct Event gLastRecvEvent;
 
 void platformExit(int exitCode) {
@@ -97,17 +97,14 @@ void platformReceiveEvent(otInstance *aInstance)
     }
 
     gLastRecvEvent = event;
+    gLastMsgId = event.mMsgId;
 
     platformAlarmAdvanceNow(event.mDelay);
 
     switch (event.mEvent)
     {
     case OT_SIM_EVENT_ALARM_FIRED:
-        // store the optional msg id from payload
-        if (payloadLen >= sizeof(gLastAlarmEventId))
-        {
-            gLastAlarmEventId = (uint64_t) *evData;
-        }
+        // Alarm events may be used to wake the node again when some simulated time has passed.
         break;
 
     case OT_SIM_EVENT_UART_WRITE:
@@ -135,11 +132,6 @@ void platformReceiveEvent(otInstance *aInstance)
         VERIFY_EVENT_SIZE(struct RadioCommEventData)
         // TODO consider also energy-detect case. This only does CCA now.
         platformRadioCcaDone(aInstance, (struct RadioCommEventData *)evData);
-        break;
-
-    case OT_SIM_EVENT_RADIO_STATE:
-        // Not further parsed. Simulator uses this to wake the OT node when it's time for a next
-        // radio-state transition in the radio-sim.c state machines.
         break;
 
     default:
