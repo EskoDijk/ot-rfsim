@@ -60,6 +60,9 @@ void otSysInit(int argc, char *argv[]) {
         return;
     }
 
+    signal(SIGTERM, &handleSignal);
+    signal(SIGHUP, &handleSignal);
+
     if (argc != 3) {
         fprintf(stderr, "Usage: %s <nodeNumber> <OTNS-socket-file>\n", basename(argv[0]));
         platformExit(EXIT_FAILURE);
@@ -77,9 +80,6 @@ void otSysInit(int argc, char *argv[]) {
     platformAlarmInit(1);
     platformRadioInit();
     platformRandomInit();
-
-    signal(SIGTERM, &handleSignal);
-    signal(SIGHUP, &handleSignal);
 
     otSimSendNodeInfoEvent(gNodeId);
 }
