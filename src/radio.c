@@ -65,6 +65,7 @@ static otRadioState  sLastReportedState          = OT_RADIO_STATE_INVALID;
 static RadioSubState sLastReportedSubState       = RFSIM_RADIO_SUBSTATE_INVALID;
 static uint8_t       sLastReportedChannel        = 0;
 static uint64_t      sLastReportedRadioEventTime = 0;
+static int8_t        sLastReportedRxSensitivity  = OT_RADIO_RSSI_INVALID;
 static uint8_t       sOngoingOperationChannel    = kMinChannel;
 static uint64_t      sNextRadioEventTime         = RFSIM_STARTUP_TIME_US;
 static uint64_t      sReceiveTimestamp           = 0;
@@ -89,12 +90,13 @@ static otRadioIeInfo sTransmitIeInfo;
 
 static otExtAddress   sExtAddress;
 static otShortAddress sShortAddress;
-static otPanId        sPanid;
+static otPanId        sPanId;
 static bool           sPromiscuous = false;
 static bool           sTxWait      = false;
 static bool           sDelaySleep  = false;
 static int8_t         sTxPower     = RFSIM_TX_POWER_DEFAULT_DBM;
 static int8_t         sCcaEdThresh = RFSIM_CCA_ED_THRESHOLD_DEFAULT_DBM;
+static int8_t         sRxSensitivity = RFSIM_RX_SENSITIVITY_DEFAULT_DBM;
 static int8_t         sLnaGain     = 0;
 static uint16_t       sRegionCode  = 0;
 static int8_t         sChannelMaxTransmitPower[kMaxChannel - kMinChannel + 1];
@@ -221,7 +223,7 @@ void otPlatRadioSetPanId(otInstance *aInstance, otPanId aPanid)
 
     assert(aInstance != NULL);
 
-    sPanid = aPanid;
+    sPanId = aPanid;
     utilsSoftSrcMatchSetPanId(aPanid);
 }
 
@@ -653,7 +655,7 @@ void radioProcessFrame(otInstance *aInstance, otError aError)
 
     otEXPECT(sPromiscuous == false); // Ack never sent in promiscuous mode https://github.com/openthread/openthread/issues/4161
 
-    otEXPECT_ACTION(otMacFrameDoesAddrMatch(&sReceiveFrame, sPanid, sShortAddress, &sExtAddress),
+    otEXPECT_ACTION(otMacFrameDoesAddrMatch(&sReceiveFrame, sPanId, sShortAddress, &sExtAddress),
                     error = OT_ERROR_ABORT);
 
 #if OPENTHREAD_CONFIG_MLE_LINK_METRICS_SUBJECT_ENABLE
@@ -799,8 +801,8 @@ int8_t otPlatRadioGetReceiveSensitivity(otInstance *aInstance)
     OT_UNUSED_VARIABLE(aInstance);
 
     assert(aInstance != NULL);
-
-    return RFSIM_RECEIVE_SENSITIVITY_DBM;
+    
+    return sRxSensitivity;
 }
 
 otRadioState otPlatRadioGetState(otInstance *aInstance)
@@ -1049,17 +1051,19 @@ static void signalRadioTxDone(otInstance *aInstance, otRadioFrame *aFrame, otRad
     }
 }
 
-void platformRadioReportStateToSimulator()
+void platformRadioReportStateToSimulator(bool aForce)
 {
     struct RadioStateEventData stateReport;
 
-    if (sLastReportedState != sState || sLastReportedChannel != sOngoingOperationChannel ||
-        sLastReportedSubState != sSubState || sLastReportedRadioEventTime != sNextRadioEventTime)
+    if (aForce || sLastReportedState != sState || sLastReportedChannel != sOngoingOperationChannel ||
+        sLastReportedSubState != sSubState || sLastReportedRadioEventTime != sNextRadioEventTime ||
+        sLastReportedRxSensitivity != sRxSensitivity)
     {
-        sLastReportedState    = sState;
-        sLastReportedChannel  = sOngoingOperationChannel;
-        sLastReportedSubState = sSubState;
+        sLastReportedState          = sState;
+        sLastReportedChannel        = sOngoingOperationChannel;
+        sLastReportedSubState       = sSubState;
         sLastReportedRadioEventTime = sNextRadioEventTime;
+        sLastReportedRxSensitivity  = sRxSensitivity;
 
         // determine the energy-state from subState. Only in very particular substates,
         // the radio is actively transmitting.
@@ -1073,12 +1077,13 @@ void platformRadioReportStateToSimulator()
             energyState = OT_RADIO_STATE_RECEIVE;
         }
 
-        stateReport.mChannel     = sOngoingOperationChannel;
-        stateReport.mEnergyState = energyState;
-        stateReport.mSubState    = sSubState;
-        stateReport.mTxPower     = sTxPower;
-        stateReport.mState       = sState; // also include the OT radio state.
-        stateReport.mRadioTime   = otPlatTimeGet();
+        stateReport.mChannel       = sOngoingOperationChannel;
+        stateReport.mEnergyState   = energyState;
+        stateReport.mSubState      = sSubState;
+        stateReport.mTxPower       = sTxPower;
+        stateReport.mRxSensitivity = sRxSensitivity;
+        stateReport.mState         = sState; // also include the OT radio state.
+        stateReport.mRadioTime     = otPlatTimeGet();
 
         // determine next radio-event time, so that simulator can guarantee this node will
         // execute again at that time.
@@ -1139,6 +1144,10 @@ static void startCcaForTransmission(otInstance *aInstance)
     otSimSendRadioChanSampleEvent(&chanSampleData);
 }
 
+void platformRadioSetRxSensitivity(int8_t rxSensDbm){
+    sRxSensitivity = rxSensDbm;
+}
+
 bool platformRadioIsBusy(void)
 {
     return (sState == OT_RADIO_STATE_TRANSMIT || sState == OT_RADIO_STATE_RECEIVE ) &&
@@ -1187,7 +1196,7 @@ void platformRadioRxDone(otInstance *aInstance, const uint8_t *aBuf, uint16_t aB
 
     bool isAck = otMacFrameIsAck(&sReceiveFrame);
     bool isAckRequested = otMacFrameIsAckRequested(&sReceiveFrame);
-    bool isAddressedToMe = otMacFrameDoesAddrMatch(&sReceiveFrame, sPanid, sShortAddress, &sExtAddress);
+    bool isAddressedToMe = otMacFrameDoesAddrMatch(&sReceiveFrame, sPanId, sShortAddress, &sExtAddress);
 
     if (sSubState == RFSIM_RADIO_SUBSTATE_RX_FRAME_ONGOING && isAckRequested && !isAck && isAddressedToMe)
     {

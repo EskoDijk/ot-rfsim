@@ -34,8 +34,8 @@
 // the name are default values on startup that can be modified in the CLI.
 enum
 {
-    RFSIM_RECEIVE_SENSITIVITY_DBM      = -100,  // dBm
-    RFSIM_CCA_ED_THRESHOLD_DEFAULT_DBM = -92,   // dBm, must be < 10 dB above rx sensitivity, default
+    RFSIM_RX_SENSITIVITY_DEFAULT_DBM   = -100,  // dBm
+    RFSIM_CCA_ED_THRESHOLD_DEFAULT_DBM = -90,   // dBm, must be <= 10 dB above rx sensitivity, default
     RFSIM_TX_POWER_DEFAULT_DBM         = 0,     // dBm, default
     RFSIM_CSL_ACCURACY_PPM             = 20,    // ppm (both in + or - direction)
     RFSIM_CSL_UNCERTAINTY_10US         = 10,     // units of 10 us (ceiling of true uncertainty)

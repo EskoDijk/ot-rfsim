@@ -114,7 +114,7 @@ void otSysProcessDrivers(otInstance *aInstance) {
     if (!otTaskletsArePending(aInstance) && platformAlarmGetNext() > 0 &&
         (!platformRadioIsTransmitPending() || platformRadioIsBusy())) {
         // report my final radio state at end of this time instant, then go to sleep.
-        platformRadioReportStateToSimulator();
+        platformRadioReportStateToSimulator(false);
         otSimSendSleepEvent();
 
         // wake up by reception of socket event from simulator.

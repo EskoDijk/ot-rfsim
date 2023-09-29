@@ -93,7 +93,6 @@ void platformReceiveEvent(otInstance *aInstance)
             fprintf(stderr, "incomplete event payload received, len=%li, expected=%u", rval, payloadLen);
             platformExit(EXIT_FAILURE);
         }
-
     }
 
     gLastRecvEvent = event;
@@ -132,6 +131,13 @@ void platformReceiveEvent(otInstance *aInstance)
         VERIFY_EVENT_SIZE(struct RadioCommEventData)
         // TODO consider also energy-detect case. This only does CCA now.
         platformRadioCcaDone(aInstance, (struct RadioCommEventData *)evData);
+        break;
+
+    case OT_SIM_EVENT_SET_RX_SENSITIVITY:
+        if (event.mDataLength>0)
+            platformRadioSetRxSensitivity(*evData);
+        else
+            platformRadioReportStateToSimulator(true);
         break;
 
     default:

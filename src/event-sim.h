@@ -30,7 +30,7 @@
 * @file
 * @brief
 *   This file includes simulation-event message definitions, and formatting and
- *   parsing functions.
+ *   parsing functions for events.
 */
 
 #ifndef PLATFORM_RFSIM_EVENT_SIM_H
@@ -41,7 +41,8 @@
 
 /**
  * The event types defined for communication with a simulator and/or with other simulated nodes.
- * Shared for both 'real' and virtual-time event types.
+ * Shared for both 'real' and virtual-time event types. Some types are not used (e.g. historic
+ * or used by the simulator only.)
  */
 enum
 {
@@ -58,6 +59,9 @@ enum
     OT_SIM_EVENT_RADIO_RX_DONE       = 10,
     OT_SIM_EVENT_EXT_ADDR            = 11,
     OT_SIM_EVENT_NODE_INFO           = 12,
+    OT_SIM_EVENT_NODE_DISCONNECTED   = 14,
+    OT_SIM_EVENT_RADIO_LOG           = 15,
+    OT_SIM_EVENT_SET_RX_SENSITIVITY  = 16,
 };
 
 #define OT_EVENT_DATA_MAX_SIZE 1024
@@ -94,31 +98,30 @@ OT_TOOL_PACKED_BEGIN
 struct RadioStateEventData
 {
     uint8_t  mChannel;
-    int8_t   mTxPower;  // only valid when mEnergyState == OT_RADIO_STATE_TRANSMIT
-    uint8_t  mEnergyState; // energy-state of radio (disabled, sleep, actively Tx, actively Rx)
+    int8_t   mTxPower;       // only valid when mEnergyState == OT_RADIO_STATE_TRANSMIT
+    int8_t   mRxSensitivity;
+    uint8_t  mEnergyState;   // energy-state of radio (disabled, sleep, actively Tx, actively Rx)
     uint8_t  mSubState;
-    uint8_t  mState; // OT state of radio (disabled, sleep, Tx, Rx)
-    uint64_t mRadioTime; // the radio's time otPlatRadioGetNow()
+    uint8_t  mState;         // OT state of radio (disabled, sleep, Tx, Rx)
+    uint64_t mRadioTime;     // the radio's time otPlatRadioGetNow()
 } OT_TOOL_PACKED_END;
 
-#define EVENT_TO_STRING(evt)
 /**
- * This function sends a generic simulation event to the simulator. Event fields are
- * updated to the values as were used for sending it.
+ * Send a generic simulation event to the simulator. Event fields are
+ * updated to the values that were used for sending the event.
  *
- * @param[in,out]   aEvent  A pointer to the simulation event to send.
- *
+ * @param[in,out]   aEvent  A pointer to the simulation event to update, and send.
  */
 void otSimSendEvent(struct Event *aEvent);
 
 /**
- * This function sends a sleep event to the simulator. The amount of time to sleep
+ * Send a sleep event to the simulator. The amount of time to sleep
  * for this node is determined by the alarm timer, by calling platformAlarmGetNext().
  */
 void otSimSendSleepEvent(void);
 
 /**
- * This function sends a RadioComm (Tx) simulation event to the simulator.
+ * Sends a RadioComm (Tx) simulation event to the simulator.
  *
  * @param[in]       aEventData A pointer to specific data for RadioComm event.
  * @param[in]       aPayload     A pointer to the data payload (radio frame) to send.
@@ -127,7 +130,7 @@ void otSimSendSleepEvent(void);
 void otSimSendRadioCommEvent(struct RadioCommEventData *aEventData,  const uint8_t *aPayload, size_t aLenPayload);
 
 /**
- * This function sends a Radio State simulation event to the simulator. It reports radio state
+ * Send a Radio State simulation event to the simulator. It reports radio state
  * and indicates for how long the current radio-state will last until next state-change.
  *
  * @param[in]  aStateData                 A pointer to specific data for Radio State event.
@@ -136,33 +139,31 @@ void otSimSendRadioCommEvent(struct RadioCommEventData *aEventData,  const uint8
 void otSimSendRadioStateEvent(struct RadioStateEventData *aStateData, uint64_t aDeltaUntilNextRadioState);
 
 /**
- * This functions sends a channel sample simulation event to the simulator. It is used
- * for CCA or energy scanning on channels.
+ * Send a channel sample simulation event to the simulator. It is used both
+ * for CCA and energy scanning on channels.
  *
  * @param[in]  aChanData    A pointer to channel-sample data instructing what to sample.
  */
 void otSimSendRadioChanSampleEvent(struct RadioCommEventData *aChanData);
 
 /**
- * This function sends a Uart data event to the simulator.
+ * Send a UART data event to the simulator.
  *
  * @param[in]   aData       A pointer to the UART data.
  * @param[in]   aLength     Length of UART data.
- *
  */
 void otSimSendUartWriteEvent(const uint8_t *aData, uint16_t aLength);
 
 /**
- * This function sends status push data event to the OT-NS simulator.
+ * Send status push data event to the OT-NS simulator.
  *
  * @param[in]   aStatus     A pointer to the status string data.
  * @param[in]   aLength     Length of status string data.
- *
  */
 void otSimSendOtnsStatusPushEvent(const char *aStatus, uint16_t aLength);
 
 /**
- * This function send Extended Address change event to the simulator.
+ * Send Extended Address change event to the simulator.
  * It differs from an OTNS Status Push 'extaddr' event in being not
  * encoded as a string, but binary.
  *
@@ -171,7 +172,8 @@ void otSimSendOtnsStatusPushEvent(const char *aStatus, uint16_t aLength);
 void otSimSendExtAddrEvent(const otExtAddress *aExtAddress);
 
 /**
- * This function send OT node information to the simulator.
+ * Send OT node information to the simulator. This helps the simulator
+ * to identify a new socket connection made by the node.
  */
 void otSimSendNodeInfoEvent(uint32_t nodeId);
 

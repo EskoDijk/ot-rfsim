@@ -179,8 +179,10 @@ bool platformRadioIsTransmitPending(void);
  * This function lets the radio report its state to the simulator, for bookkeeping and
  * energy-monitoring purposes.
  *
+ * @param[in]  aForce If true, forces sending the report event. If false, it is only
+ *                    sent if a change occurred w.r.t. the previous report event.
  */
-void platformRadioReportStateToSimulator(void);
+void platformRadioReportStateToSimulator(bool force);
 
 /**
  * This function checks if the radio is busy performing some task such as transmission,
@@ -229,6 +231,13 @@ void platformRadioTxDone(otInstance *aInstance, struct RadioCommEventData *aTxDo
  *
  */
 void platformRadioCcaDone(otInstance *aInstance, struct RadioCommEventData *aChanData);
+
+/**
+ * Set the receiver sensitivity of the radio.
+ *
+ * @param rxSensDbm the receiver sensitivity in dBm.
+ */
+void platformRadioSetRxSensitivity(int8_t rxSensDbm);
 
 #if OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
 
