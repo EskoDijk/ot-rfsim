@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2022, The OpenThread Authors.
+#  Copyright (c) 2022-2023, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -27,7 +27,7 @@
 #
 
 cmake_minimum_required(VERSION 3.10.2)
-project(ot-rfsim VERSION 0.1.0)
+project(ot-rfsim VERSION 1.0.0)
 
 set(OT_PLATFORM "external" CACHE STRING "Target platform must be 'external'")
 set(OT_PLATFORM_LIB "openthread-rfsim")
@@ -35,6 +35,8 @@ set(OT_PLATFORM_LIB "openthread-rfsim")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+
+add_definitions( -DRFSIM_SW_VERSION="${CMAKE_PROJECT_VERSION}" )
 
 add_subdirectory(openthread)
 
