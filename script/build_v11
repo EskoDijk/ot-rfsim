@@ -31,6 +31,7 @@ set -euxo pipefail
 
 OT_OPTIONS=(
     "-DOT_THREAD_VERSION=1.1"
+    "-DOT_VENDOR_MODEL=RFSIM-Node-v1.1"
 )
 readonly OT_OPTIONS
 
@@ -38,7 +39,7 @@ cd openthread
 git checkout 0a5152b4fa9f9cbff57da89d9aa33d409e915241
 cd ..
 rm -rf build
-./script/build ${OT_OPTIONS[@]}
+./script/build "${OT_OPTIONS[@]}"
 git submodule update
 cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd_v11
 cp ./build/bin/ot-cli-mtd ./ot-versions/ot-cli-mtd_v11

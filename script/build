@@ -37,6 +37,15 @@ OT_OPTIONS=(
     "-DCMAKE_BUILD_TYPE=Debug"
     "-DOT_PLATFORM=external"
     "-DOT_FULL_LOGS=ON"
+    "-DOT_VENDOR_NAME=OpenThread.io"
+    "-DOT_VENDOR_MODEL=RFSIM-Node"
+    "-DOT_JOINER=ON"
+    "-DOT_COAP=ON"
+    "-DOT_COAPS=ON"
+    "-DOT_COMMISSIONER=ON"
+    "-DOT_ECDSA=ON"
+    "-DOT_NETDIAG_CLIENT=ON"
+    "-DOT_SERVICE=ON"
 )
 readonly OT_OPTIONS
 
