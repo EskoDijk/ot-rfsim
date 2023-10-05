@@ -45,7 +45,7 @@
 // specify up to which syslog log level message will still be handled. Normally we rely on log messages being sent
 // over the virtual-UART to the simulator; so we don't need everything to go to syslog.
 //#define SYSLOG_LEVEL LOG_DEBUG
-#define SYSLOG_LEVEL LOG_NOTICE
+#define SYSLOG_LEVEL LOG_WARNING
 
 static int convertOtLogLevelToSyslogLevel(otLogLevel otLevel);
 
