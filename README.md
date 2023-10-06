@@ -1,8 +1,11 @@
-# OpenThread on RF-simulator (OT-NS) platform
+# OpenThread on RF-SIMulator (OT-RFSIM) platform
 
 This repo contains 'ot-rfsim', an example OpenThread platform driver for simulated OT nodes. A simulated OT node can be
-started from an RF simulator, such as [OT-NS](https://github.com/EskoDijk/ot-ns).
+started from an RF simulator, such as [OT-NS2](https://github.com/EskoDijk/ot-ns).
 It connects to the simulator using the Unix Domain Socket as provided in the commandline parameters.
+
+The easiest way to use this code is just to install OT-NS2, 
+following the [OT-NS2 Guide](https://github.com/EskoDijk/ot-ns/blob/main/GUIDE.md).
 
 ## Prerequisites
 
