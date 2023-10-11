@@ -81,13 +81,13 @@ extern uint64_t gLastMsgId;
 extern volatile bool gTerminate;
 
 /**
- * This function initializes the alarm service used by OpenThread.
+ * initializes the alarm service used by OpenThread.
  *
  */
 void platformAlarmInit(uint32_t aSpeedUpFactor);
 
 /**
- * This function retrieves the time remaining until the alarm fires.
+ * retrieves the time remaining until the alarm fires.
  *
  * @param[out]  aTimeout  A pointer to the timeval struct.
  *
@@ -95,7 +95,7 @@ void platformAlarmInit(uint32_t aSpeedUpFactor);
 void platformAlarmUpdateTimeout(struct timeval *aTimeout);
 
 /**
- * This function performs alarm driver processing.
+ * performs alarm driver processing.
  *
  * @param[in]  aInstance  The OpenThread instance structure.
  *
@@ -103,7 +103,7 @@ void platformAlarmUpdateTimeout(struct timeval *aTimeout);
 void platformAlarmProcess(otInstance *aInstance);
 
 /**
- * This function returns the duration to the next alarm event time (in micro seconds)
+ * returns the duration to the next alarm event time (in micro seconds)
  *
  * @returns The duration (in micro seconds, us) to the next alarm event.
  *
@@ -111,7 +111,7 @@ void platformAlarmProcess(otInstance *aInstance);
 uint64_t platformAlarmGetNext(void);
 
 /**
- * This function returns the current alarm time.
+ * returns the current alarm time.
  *
  * @returns The current alarm time (us).
  *
@@ -119,7 +119,7 @@ uint64_t platformAlarmGetNext(void);
 uint64_t platformAlarmGetNow(void);
 
 /**
- * This function advances the alarm time by @p aDelta.
+ * advances the alarm time by @p aDelta.
  *
  * @param[in]  aDelta  The amount of time (us) to advance.
  *
@@ -127,48 +127,54 @@ uint64_t platformAlarmGetNow(void);
 void platformAlarmAdvanceNow(uint64_t aDelta);
 
 /**
- * This function initializes the radio service used by OpenThread.
+ * initializes the radio service used by OpenThread.
  *
  */
 void platformRadioInit(void);
 
 /**
- * This function performs radio driver processing.
+ * performs radio driver processing.
  *
  * @param[in]  aInstance    The OpenThread instance structure.
- * @param[in]  aReadFdSet   A pointer to the read file descriptors.
- * @param[in]  aWriteFdSet  A pointer to the write file descriptors.
  *
  */
-void platformRadioProcess(otInstance *aInstance, const fd_set *aReadFdSet, const fd_set *aWriteFdSet);
+void platformRadioProcess(otInstance *aInstance);
 
 /**
- * This function initializes the random number service used by OpenThread.
+ * Performs BLE radio driver processing.
+ *
+ * @param[in]  aInstance    The OpenThread instance structure.
+ *
+ */
+void platformBleProcess(otInstance *aInstance);
+
+/**
+ * initializes the random number service used by OpenThread.
  *
  */
 void platformRandomInit(void);
 
 /**
- * This function initializes the logging service of the platform, used by OpenThread.
+ * initializes the logging service of the platform, used by OpenThread.
  *
  */
 void platformLoggingInit(char *processName);
 
 /**
- * This function restores the Uart.
+ * restores the Uart.
  *
  */
 void platformUartRestore(void);
 
 /**
- * This function exits the simulated-node's process with the specific exit code.
+ * exits the simulated-node's process with the specific exit code.
  *
  * @param exitCode  The exit code (status) to end the program with: EXIT_FAILURE or EXIT_SUCCESS.
  */
 void platformExit(int exitCode);
 
 /**
- * This function checks if radio needs to transmit a pending MAC (data) frame.
+ * checks if radio needs to transmit a pending MAC (data) frame.
  *
  * @returns Whether radio frame Tx is pending (true) or not (false).
  *
@@ -176,7 +182,7 @@ void platformExit(int exitCode);
 bool platformRadioIsTransmitPending(void);
 
 /**
- * This function lets the radio report its state to the simulator, for bookkeeping and
+ * lets the radio report its state to the simulator, for bookkeeping and
  * energy-monitoring purposes.
  *
  * @param[in]  aForce If true, forces sending the report event. If false, it is only
@@ -185,7 +191,7 @@ bool platformRadioIsTransmitPending(void);
 void platformRadioReportStateToSimulator(bool force);
 
 /**
- * This function checks if the radio is busy performing some task such as transmission,
+ * checks if the radio is busy performing some task such as transmission,
  * actively receiving a frame, returning an ACK, or doing a CCA. Idle listening (Rx) does
  * not count as busy.
  *
@@ -195,7 +201,7 @@ void platformRadioReportStateToSimulator(bool force);
 bool platformRadioIsBusy(void);
 
 /**
- * This function signals the start of a received radio frame.
+ * signals the start of a received radio frame.
  *
  * @param[in]  aInstance   A pointer to the OpenThread instance.
  * @param[in]  aRxParams   A pointer to parameters related to the reception event.
@@ -204,7 +210,7 @@ bool platformRadioIsBusy(void);
 void platformRadioRxStart(otInstance *aInstance, struct RadioCommEventData *aRxParams);
 
 /**
- * This function signals the end of a received radio frame and inputs the frame data.
+ * signals the end of a received radio frame and inputs the frame data.
  *
  * @param[in]  aInstance   A pointer to the OpenThread instance.
  * @param[in]  aBuf        A pointer to the received radio frame (struct RadioMessage).
@@ -215,7 +221,7 @@ void platformRadioRxStart(otInstance *aInstance, struct RadioCommEventData *aRxP
 void platformRadioRxDone(otInstance *aInstance, const uint8_t *aBuf, uint16_t aBufLength, struct RadioCommEventData *aRxParams);
 
 /**
- * This function signals that virtual radio is done transmitting a single frame.
+ * signals that virtual radio is done transmitting a single frame.
  *
  * @param[in]  aInstance     A pointer to the OpenThread instance.
  * @param[in]  aTxDoneParams A pointer to status parameters for the attempt to transmit the virtual radio frame.
@@ -224,7 +230,7 @@ void platformRadioRxDone(otInstance *aInstance, const uint8_t *aBuf, uint16_t aB
 void platformRadioTxDone(otInstance *aInstance, struct RadioCommEventData *aTxDoneParams);
 
 /**
- * This function signals that virtual radio is done with the CCA procedure.
+ * signals that virtual radio is done with the CCA procedure.
  *
  * @param[in]  aInstance     A pointer to the OpenThread instance.
  * @param[in]  aTxDoneParams A pointer to status result of the CCA procedure.
@@ -242,7 +248,7 @@ void platformRadioSetRxSensitivity(int8_t rxSensDbm);
 #if OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
 
 /**
- * This function initializes the TREL service.
+ * initializes the TREL service.
  *
  * @param[in] aSpeedUpFactor   The time speed-up factor.
  *
@@ -250,13 +256,13 @@ void platformRadioSetRxSensitivity(int8_t rxSensDbm);
 void platformTrelInit(uint32_t aSpeedUpFactor);
 
 /**
- * This function shuts down the TREL service.
+ * shuts down the TREL service.
  *
  */
 void platformTrelDeinit(void);
 
 /**
- * This function updates the file descriptor sets with file descriptors used by the TREL.
+ * updates the file descriptor sets with file descriptors used by the TREL.
  *
  * @param[in,out]  aReadFdSet   A pointer to the read file descriptors.
  * @param[in,out]  aWriteFdSet  A pointer to the write file descriptors.
@@ -267,7 +273,7 @@ void platformTrelDeinit(void);
 void platformTrelUpdateFdSet(fd_set *aReadFdSet, fd_set *aWriteFdSet, struct timeval *aTimeout, int *aMaxFd);
 
 /**
- * This function performs TREL processing.
+ * performs TREL processing.
  *
  * @param[in]  aInstance    The OpenThread instance structure.
  * @param[in]  aReadFdSet   A pointer to the read file descriptors.

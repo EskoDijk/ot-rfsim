@@ -1271,11 +1271,8 @@ void platformRadioTxDone(otInstance *aInstance, struct RadioCommEventData *aTxDo
     }
 }
 
-void platformRadioProcess(otInstance *aInstance, const fd_set *aReadFdSet, const fd_set *aWriteFdSet)
+void platformRadioProcess(otInstance *aInstance)
 {
-    OT_UNUSED_VARIABLE(aReadFdSet);
-    OT_UNUSED_VARIABLE(aWriteFdSet);
-
     // if stack wants to transmit a frame while radio is busy receiving: signal CCA failure directly.
     // there is no need to sample the radio channel in this case. Also do not wait until the end of Rx period to
     // signal the error, otherwise multiple radio nodes become sync'ed on their CCA period that would follow.
