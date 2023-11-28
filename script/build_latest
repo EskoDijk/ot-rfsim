@@ -39,4 +39,3 @@ cp ./build/bin/ot-rcp ./ot-versions/
 ./script/build -DOT_FULL_LOGS=OFF
 cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd_nologs
 cp ./build/bin/ot-cli-mtd ./ot-versions/ot-cli-mtd_nologs
-

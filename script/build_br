@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#  Copyright (c) 2022-2023, The OpenThread Authors.
+#  Copyright (c) 2023, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -29,47 +29,14 @@
 
 set -euxo pipefail
 
-OT_SRCDIR="$(pwd)"
-readonly OT_SRCDIR
+git submodule update
+#rm -rf build
+./script/build -DOT_BACKBONE_ROUTER=ON -DOT_BACKBONE_ROUTER_MULTICAST_ROUTING=ON -DOT_BORDER_AGENT=ON \
+               -DOT_BORDER_ROUTER=ON -DOT_BORDER_ROUTING=ON -DOT_BORDER_ROUTING_DHCP6_PD=ON \
+               -DOT_BORDER_ROUTING_COUNTERS=ON -DOT_COAP_BLOCK=ON -DOT_DNSSD_SERVER=ON \
+               -DOT_NAT64_BORDER_ROUTING=ON -DOT_NETDATA_PUBLISHER=ON -DOT_SRP_SERVER=ON -DOT_TREL=OFF \
+               -DOT_POWER_SUPPLY=EXTERNAL \
+               -DOT_MLE_MAX_CHILDREN=32 \
+               -DOT_HISTORY_TRACKER=ON
+cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd_br
 
-# OpenThread options that are always added to build first. They can be overridden on the command line.
-OT_OPTIONS=(
-    "-DCMAKE_BUILD_TYPE=Debug"
-    "-DOT_PLATFORM=external"
-    "-DOT_FULL_LOGS=ON"
-    "-DOT_VENDOR_NAME=OpenThread.io"
-    "-DOT_VENDOR_MODEL=RFSIM-Node"
-    "-DOT_VENDOR_SW_VERSION=2.0"
-    "-DOT_JOINER=ON"
-    "-DOT_COAP=ON"
-    "-DOT_COAPS=ON"
-    "-DOT_COMMISSIONER=ON"
-    "-DOT_ECDSA=ON"
-    "-DOT_NETDIAG_CLIENT=ON"
-    "-DOT_MESH_DIAG=ON"
-    "-DOT_SERVICE=ON"
-    "-DOT_SLAAC=ON"
-)
-readonly OT_OPTIONS
-
-build()
-{
-    local builddir="${OT_CMAKE_BUILD_DIR:-build}"
-
-    mkdir -p "${builddir}"
-    cd "${builddir}"
-
-    cmake -GNinja -DOT_COMPILE_WARNING_AS_ERROR=ON "$@" "${OT_SRCDIR}"
-    ninja -j7 ot-cli-ftd ot-cli-mtd ot-ncp-ftd ot-ncp-mtd ot-rcp
-
-    cd "${OT_SRCDIR}"
-}
-
-main()
-{
-    local options=()
-    options+=("${OT_OPTIONS[@]}" "$@")
-    build "${options[@]}"
-}
-
-main "$@"
