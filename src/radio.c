@@ -111,6 +111,8 @@ static uint8_t sAckIeDataLength = 0;
 #if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
 static uint32_t sCslSampleTime;
 static uint32_t sCslPeriod;
+static uint8_t  sCslAccuracy    = RFSIM_CSL_ACCURACY_DEFAULT_PPM;
+static uint8_t  sCslUncertainty = RFSIM_CSL_UNCERTAINTY_DEFAULT_10US;
 #endif
 
 #if OPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE
@@ -904,7 +906,7 @@ uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
 {
     OT_UNUSED_VARIABLE(aInstance);
 
-    return RFSIM_CSL_ACCURACY_PPM;
+    return sCslAccuracy;
 }
 
 #if OPENTHREAD_CONFIG_MAC_CSL_TRANSMITTER_ENABLE
@@ -912,7 +914,7 @@ uint8_t otPlatRadioGetCslUncertainty(otInstance *aInstance)
 {
     OT_UNUSED_VARIABLE(aInstance);
 
-    return RFSIM_CSL_UNCERTAINTY_10US;
+    return sCslUncertainty;
 }
 #endif // OPENTHREAD_CONFIG_MAC_CSL_TRANSMITTER_ENABLE
 
@@ -1144,10 +1146,6 @@ static void startCcaForTransmission(otInstance *aInstance)
     otSimSendRadioChanSampleEvent(&chanSampleData);
 }
 
-void platformRadioSetRxSensitivity(int8_t rxSensDbm){
-    sRxSensitivity = rxSensDbm;
-}
-
 bool platformRadioIsBusy(void)
 {
     return (sState == OT_RADIO_STATE_TRANSMIT || sState == OT_RADIO_STATE_RECEIVE ) &&
@@ -1269,6 +1267,53 @@ void platformRadioTxDone(otInstance *aInstance, struct RadioCommEventData *aTxDo
             setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_TX_TO_AIFS, RFSIM_TURNAROUND_TIME_US);
         }
     }
+}
+
+void platformRadioRfSimParamGet(otInstance *aInstance, struct RfSimParamEventData *params)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+
+    switch(params->mParam){
+        case RFSIM_PARAM_RX_SENSITIVITY:
+            otSimSendRfSimParamRespEvent(RFSIM_PARAM_RX_SENSITIVITY, (int32_t) sRxSensitivity);
+            break;
+        case RFSIM_PARAM_CCA_THRESHOLD:
+            otSimSendRfSimParamRespEvent(RFSIM_PARAM_CCA_THRESHOLD, (int32_t) sCcaEdThresh);
+            break;
+        case RFSIM_PARAM_CSL_ACCURACY:
+            otSimSendRfSimParamRespEvent(RFSIM_PARAM_CSL_ACCURACY, (int32_t) sCslAccuracy);
+            break;
+        case RFSIM_PARAM_CSL_UNCERTAINTY:
+            otSimSendRfSimParamRespEvent(RFSIM_PARAM_CSL_UNCERTAINTY, (int32_t) sCslUncertainty);
+            break;
+        default:
+            otSimSendRfSimParamRespEvent(RFSIM_PARAM_UNKNOWN, 0);
+            break;
+    }
+}
+
+void platformRadioRfSimParamSet(otInstance *aInstance, struct RfSimParamEventData *params)
+{
+    OT_UNUSED_VARIABLE(aInstance);
+
+    int32_t value;
+    switch(params->mParam){
+        case RFSIM_PARAM_RX_SENSITIVITY:
+            sRxSensitivity = (int8_t) params->mValue;
+            break;
+        case RFSIM_PARAM_CCA_THRESHOLD:
+            sCcaEdThresh = (int8_t) params->mValue;
+            break;
+        case RFSIM_PARAM_CSL_ACCURACY:
+            sCslAccuracy = (uint8_t) params->mValue;
+            break;
+        case RFSIM_PARAM_CSL_UNCERTAINTY:
+            sCslUncertainty = (uint8_t) params->mValue;
+            break;
+        default:
+            break;
+    }
+    platformRadioRfSimParamGet(aInstance, params);
 }
 
 void platformRadioProcess(otInstance *aInstance)

@@ -57,6 +57,15 @@ struct RadioMessage
     uint8_t mPsdu[OT_RADIO_FRAME_MAX_SIZE];
 } OT_TOOL_PACKED_END;
 
+typedef enum
+{
+    RFSIM_PARAM_RX_SENSITIVITY,
+    RFSIM_PARAM_CCA_THRESHOLD,
+    RFSIM_PARAM_CSL_ACCURACY,
+    RFSIM_PARAM_CSL_UNCERTAINTY,
+    RFSIM_PARAM_UNKNOWN = 255,
+} RfSimParam;
+
 /**
  * The sub-states of the virtual-time simulated radio. Sub-states are shared between
  * all OT radio states.

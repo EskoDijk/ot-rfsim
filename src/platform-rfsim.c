@@ -133,11 +133,15 @@ void platformReceiveEvent(otInstance *aInstance)
         platformRadioCcaDone(aInstance, (struct RadioCommEventData *)evData);
         break;
 
-    case OT_SIM_EVENT_SET_RX_SENSITIVITY:
-        if (event.mDataLength>0)
-            platformRadioSetRxSensitivity(*evData);
-        else
-            platformRadioReportStateToSimulator(true);
+    case OT_SIM_EVENT_RFSIM_PARAM_GET:
+        VERIFY_EVENT_SIZE(struct RfSimParamEventData)
+        platformRadioRfSimParamGet(aInstance, (struct RfSimParamEventData *)evData);
+        break;
+
+    case OT_SIM_EVENT_RFSIM_PARAM_SET:
+        VERIFY_EVENT_SIZE(struct RfSimParamEventData)
+        platformRadioRfSimParamSet(aInstance, (struct RfSimParamEventData *)evData);
+        platformRadioReportStateToSimulator(true);
         break;
 
     default:

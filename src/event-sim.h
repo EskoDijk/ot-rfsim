@@ -61,7 +61,9 @@ enum
     OT_SIM_EVENT_NODE_INFO           = 12,
     OT_SIM_EVENT_NODE_DISCONNECTED   = 14,
     OT_SIM_EVENT_RADIO_LOG           = 15,
-    OT_SIM_EVENT_SET_RX_SENSITIVITY  = 16,
+    OT_SIM_EVENT_RFSIM_PARAM_GET     = 16,
+    OT_SIM_EVENT_RFSIM_PARAM_SET     = 17,
+    OT_SIM_EVENT_RFSIM_PARAM_RSP     = 18,
 };
 
 #define OT_EVENT_DATA_MAX_SIZE 1024
@@ -104,6 +106,13 @@ struct RadioStateEventData
     uint8_t  mSubState;
     uint8_t  mState;         // OT state of radio (disabled, sleep, Tx, Rx)
     uint64_t mRadioTime;     // the radio's time otPlatRadioGetNow()
+} OT_TOOL_PACKED_END;
+
+OT_TOOL_PACKED_BEGIN
+struct RfSimParamEventData
+{
+    uint8_t mParam;
+    int32_t mValue;
 } OT_TOOL_PACKED_END;
 
 /**
@@ -176,5 +185,8 @@ void otSimSendExtAddrEvent(const otExtAddress *aExtAddress);
  * to identify a new socket connection made by the node.
  */
 void otSimSendNodeInfoEvent(uint32_t nodeId);
+
+// TODO
+void otSimSendRfSimParamRespEvent(uint8_t param, int32_t value);
 
 #endif // PLATFORM_RFSIM_EVENT_SIM_H

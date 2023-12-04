@@ -37,8 +37,8 @@ enum
     RFSIM_RX_SENSITIVITY_DEFAULT_DBM   = -100,  // dBm
     RFSIM_CCA_ED_THRESHOLD_DEFAULT_DBM = -75,   // dBm, MUST be -85 < Th <= -75 dBm per IEEE 802.15.4-2015
     RFSIM_TX_POWER_DEFAULT_DBM         = 0,     // dBm
-    RFSIM_CSL_ACCURACY_PPM             = 20,    // ppm (both in + or - direction)
-    RFSIM_CSL_UNCERTAINTY_10US         = 10,     // units of 10 us (ceiling of true uncertainty)
+    RFSIM_CSL_ACCURACY_DEFAULT_PPM     = 20,    // ppm (both in + or - direction)
+    RFSIM_CSL_UNCERTAINTY_DEFAULT_10US = 10,    // units of 10 us (ceiling of true uncertainty)
     RFSIM_TURNAROUND_TIME_US           = 40,    // radio turnaround time (us) between Rx and Tx
     RFSIM_STARTUP_TIME_US              = 140,   // Disabled -> Enabled time (us)
     RFSIM_RAMPUP_TIME_US               = 40,    // Sleeping -> Ready time (us)

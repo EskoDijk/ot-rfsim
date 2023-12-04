@@ -137,6 +137,17 @@ void otSimSendNodeInfoEvent(uint32_t nodeId) {
     otSimSendEvent(&event);
 }
 
+void otSimSendRfSimParamRespEvent(uint8_t param, int32_t value) {
+    struct Event event;
+    event.mData[0] = param;
+    memcpy(event.mData + 1, &value, sizeof(int32_t));
+    event.mEvent      = OT_SIM_EVENT_RFSIM_PARAM_RSP;
+    event.mDelay      = 0;
+    event.mDataLength = sizeof(int32_t) + 1;
+
+    otSimSendEvent(&event);
+}
+
 void otSimSendEvent(struct Event *aEvent)
 {
     aEvent->mMsgId = gLastMsgId;

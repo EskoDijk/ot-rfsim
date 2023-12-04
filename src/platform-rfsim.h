@@ -238,12 +238,11 @@ void platformRadioTxDone(otInstance *aInstance, struct RadioCommEventData *aTxDo
  */
 void platformRadioCcaDone(otInstance *aInstance, struct RadioCommEventData *aChanData);
 
-/**
- * Set the receiver sensitivity of the radio.
- *
- * @param rxSensDbm the receiver sensitivity in dBm.
- */
-void platformRadioSetRxSensitivity(int8_t rxSensDbm);
+// TODO
+void platformRadioRfSimParamGet(otInstance *aInstance, struct RfSimParamEventData *params);
+
+// TODO
+void platformRadioRfSimParamSet(otInstance *aInstance, struct RfSimParamEventData *params);
 
 #if OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
 
