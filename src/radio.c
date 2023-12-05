@@ -97,6 +97,8 @@ static bool           sDelaySleep  = false;
 static int8_t         sTxPower     = RFSIM_TX_POWER_DEFAULT_DBM;
 static int8_t         sCcaEdThresh = RFSIM_CCA_ED_THRESHOLD_DEFAULT_DBM;
 static int8_t         sRxSensitivity = RFSIM_RX_SENSITIVITY_DEFAULT_DBM;
+static uint8_t        sCslAccuracy    = RFSIM_CSL_ACCURACY_DEFAULT_PPM;
+static uint8_t        sCslUncertainty = RFSIM_CSL_UNCERTAINTY_DEFAULT_10US;
 static int8_t         sLnaGain     = 0;
 static uint16_t       sRegionCode  = 0;
 static int8_t         sChannelMaxTransmitPower[kMaxChannel - kMinChannel + 1];
@@ -111,8 +113,6 @@ static uint8_t sAckIeDataLength = 0;
 #if OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
 static uint32_t sCslSampleTime;
 static uint32_t sCslPeriod;
-static uint8_t  sCslAccuracy    = RFSIM_CSL_ACCURACY_DEFAULT_PPM;
-static uint8_t  sCslUncertainty = RFSIM_CSL_UNCERTAINTY_DEFAULT_10US;
 #endif
 
 #if OPENTHREAD_CONFIG_PLATFORM_RADIO_COEX_ENABLE
@@ -900,7 +900,6 @@ void otPlatRadioUpdateCslSampleTime(otInstance *aInstance, uint32_t aCslSampleTi
 
     sCslSampleTime = aCslSampleTime;
 }
-#endif // OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
 
 uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
 {
@@ -908,6 +907,7 @@ uint8_t otPlatRadioGetCslAccuracy(otInstance *aInstance)
 
     return sCslAccuracy;
 }
+#endif // OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
 
 #if OPENTHREAD_CONFIG_MAC_CSL_TRANSMITTER_ENABLE
 uint8_t otPlatRadioGetCslUncertainty(otInstance *aInstance)
