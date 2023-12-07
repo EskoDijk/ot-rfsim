@@ -36,6 +36,7 @@ git submodule update
                -DOT_BORDER_ROUTING_COUNTERS=ON -DOT_COAP_BLOCK=ON -DOT_DNSSD_SERVER=ON \
                -DOT_NAT64_BORDER_ROUTING=ON -DOT_NETDATA_PUBLISHER=ON -DOT_SRP_SERVER=ON -DOT_TREL=OFF \
                -DOT_POWER_SUPPLY=EXTERNAL \
+               -DOT_DEVICE_PROP_LEADER_WEIGHT=ON \
                -DOT_MLE_MAX_CHILDREN=32 \
                -DOT_HISTORY_TRACKER=ON
 cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd_br
