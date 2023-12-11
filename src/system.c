@@ -138,31 +138,6 @@ void otSysProcessDrivers(otInstance *aInstance) {
 }
 
 /**
-* This function parses an environment variable as an unsigned 16-bit integer.
-*
-* If the environment variable does not exist, this function does nothing.
-* If it is not a valid integer, this function will terminate the process with an error message.
-*
-* @param[in]   aEnvName  The name of the environment variable.
-* @param[out]  aValue    A pointer to the unsigned 16-bit integer.
-*
-*/
-static void parseFromEnvAsUint16(const char *aEnvName, uint16_t *aValue) {
-    char *env = getenv(aEnvName);
-
-    if (env) {
-        char *endptr;
-
-        *aValue = (uint16_t) strtol(env, &endptr, 0);
-
-        if (*endptr != '\0') {
-            fprintf(stderr, "Invalid %s: %s\n", aEnvName, env);
-            platformExit(EXIT_FAILURE);
-        }
-    }
-}
-
-/**
  * This function initialises the client socket used for communication with the simulator.
  * The port number is calculated based on environment vars (if set) or else defaults.
  */
@@ -170,7 +145,7 @@ static void socket_init(char *socketFilePath) {
     struct sockaddr_un sockaddr;
     memset(&sockaddr, 0, sizeof(struct sockaddr_un));
     sockaddr.sun_family = AF_UNIX;
-    int strLen = strlen(socketFilePath);
+    size_t strLen = strlen(socketFilePath);
     if (strLen >= sizeof(sockaddr.sun_path)) {
         gTerminate = true;
         otPlatLog(OT_LOG_LEVEL_CRIT,OT_LOG_REGION_PLATFORM,

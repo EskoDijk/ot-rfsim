@@ -42,6 +42,7 @@
 #include "utils/code_utils.h"
 #include "utils/mac_frame.h"
 #include "utils/soft_source_match_table.h"
+#include "utils/link_metrics.h"
 #include "event-sim.h"
 #include "common/debug.hpp"
 
@@ -277,7 +278,7 @@ void platformRadioInit(void)
     sReceiveFrame.mInfo.mRxInfo.mRssi = OT_RADIO_RSSI_INVALID;
 
 #if OPENTHREAD_CONFIG_MLE_LINK_METRICS_SUBJECT_ENABLE
-    otLinkMetricsInit(SIM_RECEIVE_SENSITIVITY_DBM);
+    otLinkMetricsInit(RFSIM_RX_SENSITIVITY_DEFAULT_DBM);
 #endif
 }
 
@@ -1296,7 +1297,6 @@ void platformRadioRfSimParamSet(otInstance *aInstance, struct RfSimParamEventDat
 {
     OT_UNUSED_VARIABLE(aInstance);
 
-    int32_t value;
     switch(params->mParam){
         case RFSIM_PARAM_RX_SENSITIVITY:
             sRxSensitivity = (int8_t) params->mValue;

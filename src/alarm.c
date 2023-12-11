@@ -34,6 +34,7 @@
 #include <openthread/platform/alarm-milli.h>
 
 #define US_PER_MS 1000
+#define US_PER_S 1000000
 
 static uint64_t sNow = 0; // microseconds
 
@@ -136,6 +137,58 @@ uint64_t platformAlarmGetNext(void)
 #endif
 
     return remaining;
+}
+
+void platformAlarmUpdateTimeout(struct timeval *aTimeout)
+{
+    int64_t  remaining = INT32_MAX;
+    uint64_t now       = platformAlarmGetNow();
+
+    assert(aTimeout != NULL);
+
+    if (sIsMsRunning)
+    {
+        remaining = (int32_t)(sMsAlarm - (uint32_t)(now / US_PER_MS));
+        if(remaining <= 0) {
+            goto exit;
+        }
+        remaining *= US_PER_MS;
+        remaining -= (now % US_PER_MS);
+    }
+
+#if OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
+    if (sIsUsRunning)
+    {
+        int32_t usRemaining = (int32_t)(sUsAlarm - (uint32_t)now);
+
+        if (usRemaining < remaining)
+        {
+            remaining = usRemaining;
+        }
+    }
+#endif // OPENTHREAD_CONFIG_PLATFORM_USEC_TIMER_ENABLE
+
+exit:
+    if (remaining <= 0)
+    {
+        aTimeout->tv_sec  = 0;
+        aTimeout->tv_usec = 0;
+    }
+    else
+    {
+        //remaining /= sSpeedUpFactor; // FIXME check  if needed in otns sim
+
+        if (remaining == 0)
+        {
+            remaining = 1;
+        }
+
+        if (remaining < (int64_t)(aTimeout->tv_sec) * US_PER_S + (int64_t)(aTimeout->tv_usec))
+        {
+            aTimeout->tv_sec  = (time_t)(remaining / US_PER_S);
+            aTimeout->tv_usec = (suseconds_t)(remaining % US_PER_S);
+        }
+    }
 }
 
 void platformAlarmProcess(otInstance *aInstance)

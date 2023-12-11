@@ -38,9 +38,9 @@
 extern jmp_buf gResetJump;
 extern struct Event gLastSentEvent, gLastRecvEvent;
 
-static otPlatResetReason   sPlatResetReason = OT_PLAT_RESET_REASON_POWER_ON;
-bool                       gPlatformPseudoResetWasRequested;
-static otPlatMcuPowerState gPlatMcuPowerState = OT_PLAT_MCU_POWER_STATE_ON;
+otPlatResetReason   gPlatResetReason = OT_PLAT_RESET_REASON_POWER_ON;
+bool                gPlatformPseudoResetWasRequested;
+otPlatMcuPowerState gPlatMcuPowerState = OT_PLAT_MCU_POWER_STATE_ON;
 
 void otPlatReset(otInstance *aInstance)
 {
@@ -48,7 +48,7 @@ void otPlatReset(otInstance *aInstance)
 
 #if OPENTHREAD_PLATFORM_USE_PSEUDO_RESET
     gPlatformPseudoResetWasRequested = true;
-    sPlatResetReason                 = OT_PLAT_RESET_REASON_SOFTWARE;
+    gPlatResetReason                 = OT_PLAT_RESET_REASON_SOFTWARE;
 
 #else // OPENTHREAD_PLATFORM_USE_PSEUDO_RESET
     // Restart the process using execvp.
@@ -79,7 +79,7 @@ otPlatResetReason otPlatGetResetReason(otInstance *aInstance)
 {
     OT_UNUSED_VARIABLE(aInstance);
 
-    return sPlatResetReason;
+    return gPlatResetReason;
 }
 
 void otPlatWakeHost(void)
