@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#  Copyright (c) 2023, The OpenThread Authors.
+#  Copyright (c) 2023-2024, The OpenThread Authors.
 #  All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,7 @@
 set -euxo pipefail
 
 git submodule update
-#rm -rf build
+rm -rf build
 ./script/build -DOT_BACKBONE_ROUTER=ON -DOT_BACKBONE_ROUTER_MULTICAST_ROUTING=ON -DOT_BORDER_AGENT=ON \
                -DOT_BORDER_ROUTER=ON -DOT_BORDER_ROUTING=ON -DOT_BORDER_ROUTING_DHCP6_PD=ON \
                -DOT_BORDER_ROUTING_COUNTERS=ON -DOT_COAP_BLOCK=ON -DOT_DNSSD_SERVER=ON \
@@ -40,4 +40,3 @@ git submodule update
                -DOT_MLE_MAX_CHILDREN=32 \
                -DOT_HISTORY_TRACKER=ON
 cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd_br
-
