@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017-2023, The OpenThread Authors.
+ *  Copyright (c) 2017-2024, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -50,6 +50,16 @@
  */
 #define OPENTHREAD_CONFIG_PLATFORM_INFO "RFSIM"
 
+// In older codebases, some required defines are missing - recreate them here.
+#ifndef OT_THREAD_VERSION_1_3
+#define OT_THREAD_VERSION_1_3 4
+#endif
+
+#ifndef OT_THREAD_VERSION_1_3_1
+#define OT_THREAD_VERSION_1_3_1 5
+#endif
+
+// Helper macros for vendor SW version string
 #define STRINGIZE_HELPER(x) #x
 #define STRINGIZE(x) STRINGIZE_HELPER(x)
 
@@ -71,9 +81,6 @@
 #define OPENTHREAD_CONFIG_IP6_SLAAC_ENABLE 1
 #endif
 
-// Thread 1.3 specific defines section can only be compiled on more recent codebases. Check for this.
-# if (OPENTHREAD_CONFIG_THREAD_VERSION > OT_THREAD_VERSION_1_2)
-
 #ifndef OPENTHREAD_CONFIG_SRP_SERVER_ENABLE
 #define OPENTHREAD_CONFIG_SRP_SERVER_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
 #endif
@@ -94,9 +101,6 @@
 #define OPENTHREAD_CONFIG_DNS_CLIENT_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
 #define OPENTHREAD_CONFIG_DNS_CLIENT_OVER_TCP_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_3)
 #endif
-
-#endif // # if (OPENTHREAD_CONFIG_THREAD_VERSION > OT_THREAD_VERSION_1_2)
-
 
 #ifndef OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE
 #define OPENTHREAD_CONFIG_MAC_CSL_RECEIVER_ENABLE (OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2)
