@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-2023, The OpenThread Authors.
+ *  Copyright (c) 2016-2024, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -40,8 +40,8 @@
 #include <openthread/config.h>
 
 #include <assert.h>
-#include <stdio.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -61,7 +61,7 @@
 
 #include "event-sim.h"
 
-#define UNDEFINED_TIME_US 0  // an undefined period of time (us) that is > 0
+#define UNDEFINED_TIME_US 0 // an undefined period of time (us) that is > 0
 
 /**
  * Unique node ID.
@@ -151,12 +151,17 @@ void platformBleProcess(otInstance *aInstance);
 /**
  * initializes the random number service used by OpenThread.
  *
+ * @param[in] randomSeed Either 0 to init to unpredictable (pseudo)random
+ * generation (default), or != 0 to pick a specific random seed to initialize
+ * with.
  */
-void platformRandomInit(void);
+void platformRandomInit(int32_t randomSeed);
 
 /**
  * initializes the logging service of the platform, used by OpenThread.
  *
+ * @param[in] processName  The name of the current process; used for display or
+ * syslog purposes.
  */
 void platformLoggingInit(char *processName);
 
@@ -169,7 +174,8 @@ void platformUartRestore(void);
 /**
  * exits the simulated-node's process with the specific exit code.
  *
- * @param exitCode  The exit code (status) to end the program with: EXIT_FAILURE or EXIT_SUCCESS.
+ * @param exitCode  The exit code (status) to end the program with: EXIT_FAILURE
+ * or EXIT_SUCCESS.
  */
 void platformExit(int exitCode);
 
@@ -185,15 +191,15 @@ bool platformRadioIsTransmitPending(void);
  * lets the radio report its state to the simulator, for bookkeeping and
  * energy-monitoring purposes.
  *
- * @param[in]  aForce If true, forces sending the report event. If false, it is only
- *                    sent if a change occurred w.r.t. the previous report event.
+ * @param[in]  aForce If true, forces sending the report event. If false, it is
+ * only sent if a change occurred w.r.t. the previous report event.
  */
 void platformRadioReportStateToSimulator(bool force);
 
 /**
  * checks if the radio is busy performing some task such as transmission,
- * actively receiving a frame, returning an ACK, or doing a CCA. Idle listening (Rx) does
- * not count as busy.
+ * actively receiving a frame, returning an ACK, or doing a CCA. Idle listening
+ * (Rx) does not count as busy.
  *
  * @returns Whether radio is busy with a task.
  *
@@ -207,7 +213,8 @@ bool platformRadioIsBusy(void);
  * @param[in]  aRxParams   A pointer to parameters related to the reception event.
  *
  */
-void platformRadioRxStart(otInstance *aInstance, struct RadioCommEventData *aRxParams);
+void platformRadioRxStart(otInstance *aInstance,
+                          struct RadioCommEventData *aRxParams);
 
 /**
  * signals the end of a received radio frame and inputs the frame data.
@@ -218,13 +225,16 @@ void platformRadioRxStart(otInstance *aInstance, struct RadioCommEventData *aRxP
  * @param[in]  aRxParams   A pointer to parameters related to the reception event.
  *
  */
-void platformRadioRxDone(otInstance *aInstance, const uint8_t *aBuf, uint16_t aBufLength, struct RadioCommEventData *aRxParams);
+void platformRadioRxDone(otInstance *aInstance, const uint8_t *aBuf,
+                         uint16_t aBufLength,
+                         struct RadioCommEventData *aRxParams);
 
 /**
  * signals that virtual radio is done transmitting a single frame.
  *
  * @param[in]  aInstance     A pointer to the OpenThread instance.
- * @param[in]  aTxDoneParams A pointer to status parameters for the attempt to transmit the virtual radio frame.
+ * @param[in]  aTxDoneParams A pointer to status parameters for the attempt to
+ * transmit the virtual radio frame.
  *
  */
 void platformRadioTxDone(otInstance *aInstance, struct RadioCommEventData *aTxDoneParams);
@@ -269,7 +279,8 @@ void platformTrelDeinit(void);
  * @param[in,out]  aMaxFd       A pointer to the max file descriptor.
  *
  */
-void platformTrelUpdateFdSet(fd_set *aReadFdSet, fd_set *aWriteFdSet, struct timeval *aTimeout, int *aMaxFd);
+void platformTrelUpdateFdSet(fd_set *aReadFdSet, fd_set *aWriteFdSet,
+                             struct timeval *aTimeout, int *aMaxFd);
 
 /**
  * performs TREL processing.
@@ -279,7 +290,8 @@ void platformTrelUpdateFdSet(fd_set *aReadFdSet, fd_set *aWriteFdSet, struct tim
  * @param[in]  aWriteFdSet  A pointer to the write file descriptors.
  *
  */
-void platformTrelProcess(otInstance *aInstance, const fd_set *aReadFdSet, const fd_set *aWriteFdSet);
+void platformTrelProcess(otInstance *aInstance, const fd_set *aReadFdSet,
+                         const fd_set *aWriteFdSet);
 
 #endif // OPENTHREAD_CONFIG_RADIO_LINK_TREL_ENABLE
 

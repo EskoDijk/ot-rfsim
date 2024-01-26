@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-2023, The OpenThread Authors.
+ *  Copyright (c) 2016-2024, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -42,8 +42,11 @@
 #include <openthread/tasklet.h>
 
 extern void platformReceiveEvent(otInstance *aInstance);
+
 extern bool gPlatformPseudoResetWasRequested;
+
 static void socket_init(char *socketFilePath);
+
 static void handleSignal(int aSignal);
 
 volatile bool gTerminate = false;
@@ -54,6 +57,7 @@ uint16_t sPortOffset;
 
 void otSysInit(int argc, char *argv[]) {
     char *endptr;
+    int32_t randomSeed = 0;
 
     if (gPlatformPseudoResetWasRequested) {
         gPlatformPseudoResetWasRequested = false;
@@ -63,23 +67,37 @@ void otSysInit(int argc, char *argv[]) {
     signal(SIGTERM, &handleSignal);
     signal(SIGHUP, &handleSignal);
 
-    if (argc != 3) {
-        fprintf(stderr, "Usage: %s <nodeNumber> <OTNS-socket-file>\n", basename(argv[0]));
+    if (argc < 3 || argc > 4) {
+        fprintf(stderr,
+                "Usage: %s <NodeId> <OTNS-Unix-socket-file> [<random-seed>]\n",
+                basename(argv[0]));
         platformExit(EXIT_FAILURE);
     }
 
     long nodeIdParam = strtol(argv[1], &endptr, 0);
-    if (*endptr != '\0' || nodeIdParam < 1 || nodeIdParam >= UINT32_MAX ) {
-        fprintf(stderr, "Invalid NodeId: %s (must be >= 1 and < UINT32_MAX )\n", argv[1]);
+    if (*endptr != '\0' || nodeIdParam < 1 || nodeIdParam >= UINT32_MAX) {
+        fprintf(stderr, "Invalid NodeId: %s (must be >= 1 and < UINT32_MAX )\n",
+                argv[1]);
         platformExit(EXIT_FAILURE);
     }
     gNodeId = (uint32_t) nodeIdParam;
+
+    if (argc == 4) {
+        long randomSeedParam = strtol(argv[3], &endptr, 0);
+        if (*endptr != '\0' || randomSeedParam >= INT32_MAX ||
+            randomSeedParam <= INT32_MIN) {
+            fprintf(stderr, "Invalid random-seed integer: %s (must be > INT32_MIN and < INT32_MAX)\n",
+                    argv[3]);
+            platformExit(EXIT_FAILURE);
+        }
+        randomSeed = (uint32_t) randomSeedParam;
+    }
 
     platformLoggingInit(argv[0]);
     socket_init(argv[2]);
     platformAlarmInit(1);
     platformRadioInit();
-    platformRandomInit();
+    platformRandomInit(randomSeed);
 
     otSimSendNodeInfoEvent(gNodeId);
 }
@@ -138,8 +156,9 @@ void otSysProcessDrivers(otInstance *aInstance) {
 }
 
 /**
- * This function initialises the client socket used for communication with the simulator.
- * The port number is calculated based on environment vars (if set) or else defaults.
+ * Initialises the client socket used for communication with the
+ * simulator. The port number is calculated based on environment vars (if set)
+ * or else defaults.
  */
 static void socket_init(char *socketFilePath) {
     struct sockaddr_un sockaddr;
@@ -148,7 +167,7 @@ static void socket_init(char *socketFilePath) {
     size_t strLen = strlen(socketFilePath);
     if (strLen >= sizeof(sockaddr.sun_path)) {
         gTerminate = true;
-        otPlatLog(OT_LOG_LEVEL_CRIT,OT_LOG_REGION_PLATFORM,
+        otPlatLog(OT_LOG_LEVEL_CRIT, OT_LOG_REGION_PLATFORM,
                   "Unix socket path too long: %s\n", socketFilePath);
         platformExit(EXIT_FAILURE);
     }
@@ -163,8 +182,9 @@ static void socket_init(char *socketFilePath) {
 
     if (connect(gSockFd, (struct sockaddr *) &sockaddr, sizeof(sockaddr)) == -1) {
         gTerminate = true;
-        otPlatLog(OT_LOG_LEVEL_CRIT,OT_LOG_REGION_PLATFORM,
-                  "Unable to open Unix socket to OT-NS at: %s\n", sockaddr.sun_path);
+        otPlatLog(OT_LOG_LEVEL_CRIT, OT_LOG_REGION_PLATFORM,
+                  "Unable to open Unix socket to OT-NS at: %s\n",
+                  sockaddr.sun_path);
         perror("bind");
         platformExit(EXIT_FAILURE);
     }
