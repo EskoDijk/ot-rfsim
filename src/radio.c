@@ -1197,9 +1197,10 @@ void platformRadioRxDone(otInstance *aInstance, const uint8_t *aBuf, uint16_t aB
     bool isAckRequested = otMacFrameIsAckRequested(&sReceiveFrame);
     bool isAddressedToMe = otMacFrameDoesAddrMatch(&sReceiveFrame, sPanId, sShortAddress, &sExtAddress);
 
-    if (sSubState == RFSIM_RADIO_SUBSTATE_RX_FRAME_ONGOING && isAckRequested && !isAck && isAddressedToMe)
+    if (sSubState == RFSIM_RADIO_SUBSTATE_RX_FRAME_ONGOING && isAckRequested && !isAck && isAddressedToMe &&
+        aRxParams->mError == OT_ERROR_NONE)
     {
-        // Rx done, need to send Ack. Wait exactly time AIFS before sending out the Ack.
+        // Rx done ok, need to send Ack. Wait exactly time AIFS before sending out the Ack.
         setRadioSubState(RFSIM_RADIO_SUBSTATE_RX_AIFS_WAIT, OT_RADIO_AIFS_TIME_US);
     }
     else if (sSubState == RFSIM_RADIO_SUBSTATE_RX_FRAME_ONGOING)
