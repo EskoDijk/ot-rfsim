@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2021, The OpenThread Authors.
+ *  Copyright (c) 2021-2024, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -49,13 +49,13 @@ otError otPlatInfraIfSendIcmp6Nd(uint32_t            aInfraIfIndex,
     OT_UNUSED_VARIABLE(aBuffer);
     OT_UNUSED_VARIABLE(aBufferLength);
 
-    return OT_ERROR_FAILED;
+    return OT_ERROR_NONE;
 }
 
 otError otPlatInfraIfDiscoverNat64Prefix(uint32_t aInfraIfIndex)
 {
     OT_UNUSED_VARIABLE(aInfraIfIndex);
 
-    return OT_ERROR_FAILED;
+    return OT_ERROR_NONE;
 }
 #endif
