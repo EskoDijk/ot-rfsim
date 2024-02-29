@@ -150,6 +150,7 @@ void otSysProcessDrivers(otInstance *aInstance) {
 
     platformAlarmProcess(aInstance);
     platformRadioProcess(aInstance);
+    platformRadioInterfererProcess(aInstance);
 #if OPENTHREAD_CONFIG_BLE_TCAT_ENABLE
     platformBleProcess(aInstance);
 #endif

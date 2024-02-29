@@ -141,6 +141,14 @@ void platformRadioInit(void);
 void platformRadioProcess(otInstance *aInstance);
 
 /**
+ * performs radio processing for simulated interferer behavior.
+ *
+ * @param[in]  aInstance    The OpenThread instance structure.
+ *
+ */
+void platformRadioInterfererProcess(otInstance *aInstance);
+
+/**
  * Performs BLE radio driver processing.
  *
  * @param[in]  aInstance    The OpenThread instance structure.

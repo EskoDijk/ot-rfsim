@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2016-2023, The OpenThread Authors.
+ *  Copyright (c) 2016-2024, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -100,6 +100,7 @@ static int8_t         sCcaEdThresh = RFSIM_CCA_ED_THRESHOLD_DEFAULT_DBM;
 static int8_t         sRxSensitivity = RFSIM_RX_SENSITIVITY_DEFAULT_DBM;
 static uint8_t        sCslAccuracy    = RFSIM_CSL_ACCURACY_DEFAULT_PPM;
 static uint8_t        sCslUncertainty = RFSIM_CSL_UNCERTAINTY_DEFAULT_10US;
+static uint8_t        sTxInterferer = 0;
 static int8_t         sLnaGain     = 0;
 static uint16_t       sRegionCode  = 0;
 static int8_t         sChannelMaxTransmitPower[kMaxChannel - kMinChannel + 1];
@@ -1288,6 +1289,9 @@ void platformRadioRfSimParamGet(otInstance *aInstance, struct RfSimParamEventDat
         case RFSIM_PARAM_CSL_UNCERTAINTY:
             otSimSendRfSimParamRespEvent(RFSIM_PARAM_CSL_UNCERTAINTY, (int32_t) sCslUncertainty);
             break;
+        case RFSIM_PARAM_TX_INTERFERER:
+            otSimSendRfSimParamRespEvent(RFSIM_PARAM_TX_INTERFERER, (int32_t) sTxInterferer);
+            break;
         default:
             otSimSendRfSimParamRespEvent(RFSIM_PARAM_UNKNOWN, 0);
             break;
@@ -1310,6 +1314,9 @@ void platformRadioRfSimParamSet(otInstance *aInstance, struct RfSimParamEventDat
             break;
         case RFSIM_PARAM_CSL_UNCERTAINTY:
             sCslUncertainty = (uint8_t) params->mValue;
+            break;
+        case RFSIM_PARAM_TX_INTERFERER:
+            sTxInterferer = (uint8_t) params->mValue;
             break;
         default:
             break;
@@ -1436,3 +1443,53 @@ void platformRadioProcess(otInstance *aInstance)
     }
 }
 
+void platformRadioInterfererProcess(otInstance *aInstance) {
+    if (sTxInterferer == 0)
+        return;
+
+    // Tx/Rx state machine. Execute time and data based state transitions for substate.
+    // Event based transitions are in functions called by platform-sim.c receiveEvent().
+    if (otPlatTimeGet() >= sNextRadioEventTime)
+    {
+        uint64_t ifsTime = 16; // FIXME - this is just a random testing value.
+        switch (sSubState)
+        {
+            case RFSIM_RADIO_SUBSTATE_STARTUP: // when radio/node starts.
+                setRadioSubState(RFSIM_RADIO_SUBSTATE_READY, UNDEFINED_TIME_US);
+                break;
+
+            case RFSIM_RADIO_SUBSTATE_READY:  // ready/idle substate: decide when to start transmitting frame.
+                sOngoingOperationChannel = sCurrentChannel;
+                if (platformRadioIsTransmitPending())
+                {
+                    setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_CCA, OT_RADIO_CCA_TIME_US/16 + FAILSAFE_TIME_US); // FIXME time
+                    startCcaForTransmission(aInstance);
+                }
+                break;
+
+            case RFSIM_RADIO_SUBSTATE_TX_CCA:
+                // CCA period timed out without CCA sample from simulator. Normally should not happen.
+                signalRadioTxDone(aInstance, &sTransmitFrame, NULL, OT_ERROR_CHANNEL_ACCESS_FAILURE);
+                setRadioSubState(RFSIM_RADIO_SUBSTATE_READY, UNDEFINED_TIME_US);
+                sTxWait = false;
+                break;
+
+            case RFSIM_RADIO_SUBSTATE_TX_CCA_TO_TX:
+                radioTransmit(&sTransmitMessage, &sTransmitFrame); // FIXME use special intf transmission here.
+                setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_FRAME_ONGOING, sLastTxEventData.mDuration + FAILSAFE_TIME_US);
+                break;
+
+            case RFSIM_RADIO_SUBSTATE_TX_FRAME_ONGOING:
+                setRadioSubState(RFSIM_RADIO_SUBSTATE_IFS_WAIT, RFSIM_TURNAROUND_TIME_US); // FIXME time
+                break;
+
+            case RFSIM_RADIO_SUBSTATE_IFS_WAIT:
+                setRadioSubState(RFSIM_RADIO_SUBSTATE_READY, UNDEFINED_TIME_US);
+                sTxWait = false;
+                break;
+
+            default:
+                OT_ASSERT(false && "Illegal state found");
+        }
+    }
+}

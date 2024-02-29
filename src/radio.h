@@ -1,5 +1,5 @@
 /*
-*  Copyright (c) 2016-2023, The OpenThread Authors.
+*  Copyright (c) 2016-2024, The OpenThread Authors.
 *  All rights reserved.
 *
 *  Redistribution and use in source and binary forms, with or without
@@ -63,6 +63,7 @@ typedef enum
     RFSIM_PARAM_CCA_THRESHOLD,
     RFSIM_PARAM_CSL_ACCURACY,
     RFSIM_PARAM_CSL_UNCERTAINTY,
+    RFSIM_PARAM_TX_INTERFERER,
     RFSIM_PARAM_UNKNOWN = 255,
 } RfSimParam;
 
