@@ -38,6 +38,7 @@
 #include <openthread/platform/radio.h>
 #include <openthread/platform/time.h>
 #include <openthread/platform/otns.h>
+#include <openthread/random_noncrypto.h>
 
 #include "utils/code_utils.h"
 #include "utils/mac_frame.h"
@@ -48,14 +49,15 @@
 
 // declaration of radio functions
 static void setRadioSubState(RadioSubState aState, uint64_t timeToRemainInState);
-static void startCcaForTransmission(otInstance *aInstance);
+static void startCcaForTransmission(otInstance *aInstance, uint64_t ccaDurationUs);
 static void signalRadioTxDone(otInstance *aInstance, otRadioFrame *aFrame, otRadioFrame *aAckFrame, otError aError);
 static void applyRadioDelayedSleep();
 void radioSendMessage(otInstance *aInstance);
 void radioTransmit(struct RadioMessage *aMessage, const struct otRadioFrame *aFrame);
+void radioTransmitInterference(uint64_t frameDurationUs);
 void setRadioState(otRadioState aState);
 void radioPrepareAck(void);
-bool IsTimeAfterOrEqual(uint32_t aTimeA, uint32_t aTimeB);
+static bool IsTimeAfterOrEqual(uint32_t aTimeA, uint32_t aTimeB);
 void radioProcessFrame(otInstance *aInstance, otError aError);
 
 #if OPENTHREAD_CONFIG_THREAD_VERSION >= OT_THREAD_VERSION_1_2
@@ -70,6 +72,7 @@ static int8_t        sLastReportedRxSensitivity  = OT_RADIO_RSSI_INVALID;
 static uint8_t       sOngoingOperationChannel    = kMinChannel;
 static uint64_t      sNextRadioEventTime         = RFSIM_STARTUP_TIME_US;
 static uint64_t      sReceiveTimestamp           = 0;
+static uint64_t      sTurnaroundTimeUs           = RFSIM_TURNAROUND_TIME_US;
 static RadioSubState sSubState                   = RFSIM_RADIO_SUBSTATE_STARTUP;
 static struct RadioCommEventData sLastTxEventData; // metadata about last/ongoing Tx action.
 
@@ -103,7 +106,7 @@ static uint8_t        sCslUncertainty = RFSIM_CSL_UNCERTAINTY_DEFAULT_10US;
 static uint8_t        sTxInterferer = 0;
 static int8_t         sLnaGain     = 0;
 static uint16_t       sRegionCode  = 0;
-static int8_t         sChannelMaxTransmitPower[kMaxChannel - kMinChannel + 1];
+static int8_t         sChannelMaxTransmitPower[kMaxChannel - kMinChannel + 1]; // for 802.15.4 only
 static uint8_t        sCurrentChannel = kMinChannel;
 static bool           sSrcMatchEnabled = false;
 
@@ -135,7 +138,7 @@ static otMacKeyMaterial sCurrKey;
 static otMacKeyMaterial sNextKey;
 static otRadioKeyType   sKeyType;
 
-bool IsTimeAfterOrEqual(uint32_t aTimeA, uint32_t aTimeB)
+static bool IsTimeAfterOrEqual(uint32_t aTimeA, uint32_t aTimeB)
 {
     return (aTimeA - aTimeB) < (1U << 31);
 }
@@ -1010,6 +1013,16 @@ void radioTransmit(struct RadioMessage *aMessage, const struct otRadioFrame *aFr
     otSimSendRadioCommEvent(&sLastTxEventData, (const uint8_t*) aMessage, aFrame->mLength + offsetof(struct RadioMessage, mPsdu));
 }
 
+void radioTransmitInterference(uint64_t frameDurationUs)
+{
+    sLastTxEventData.mChannel  = sOngoingOperationChannel;
+    sLastTxEventData.mPower    = sTxPower;
+    sLastTxEventData.mError    = OT_TX_TYPE_INTF;
+    sLastTxEventData.mDuration = frameDurationUs;
+
+    otSimSendRadioCommInterferenceEvent(&sLastTxEventData);
+}
+
 void radioReceive(otInstance *aInstance, otError aError)
 {
     bool isAck = otMacFrameIsAck(&sReceiveFrame);
@@ -1042,7 +1055,10 @@ void radioReceive(otInstance *aInstance, otError aError)
 
 // helper function to invoke otPlatRadioTxDone() and its diagnostic equivalent.
 static void signalRadioTxDone(otInstance *aInstance, otRadioFrame *aFrame, otRadioFrame *aAckFrame, otError aError) {
-    setRadioState(OT_RADIO_STATE_RECEIVE); // set per state diagram in radio.hpp
+    if (sTxInterferer > 0 )
+        return;
+    if (sState == OT_RADIO_STATE_TRANSMIT)
+        setRadioState(OT_RADIO_STATE_RECEIVE); // set per state diagram in radio.hpp
 #if OPENTHREAD_CONFIG_DIAG_ENABLE
     if (otPlatDiagModeGet())
     {
@@ -1135,16 +1151,17 @@ static void setRadioSubState(RadioSubState aState, uint64_t timeToRemainInState)
     sSubState = aState;
 }
 
-static void startCcaForTransmission(otInstance *aInstance)
+static void startCcaForTransmission(otInstance *aInstance, uint64_t ccaDurationUs)
 {
     OT_UNUSED_VARIABLE(aInstance);
 
     sTxWait = true;
+    sLastTxEventData.mError = OT_ERROR_NONE;
 
     // send CCA event, wait for simulator to send back the channel sampling result.
     struct RadioCommEventData chanSampleData;
     chanSampleData.mChannel = sTransmitFrame.mChannel;
-    chanSampleData.mDuration = OT_RADIO_CCA_TIME_US;
+    chanSampleData.mDuration = ccaDurationUs;
     otSimSendRadioChanSampleEvent(&chanSampleData);
 }
 
@@ -1162,6 +1179,7 @@ void platformRadioRxStart(otInstance *aInstance, struct RadioCommEventData *aRxP
     otEXPECT(sState == OT_RADIO_STATE_RECEIVE || sState == OT_RADIO_STATE_TRANSMIT); // and in valid states.
     otEXPECT(sSubState == RFSIM_RADIO_SUBSTATE_READY || sSubState == RFSIM_RADIO_SUBSTATE_IFS_WAIT ||
              sSubState == RFSIM_RADIO_SUBSTATE_TX_AIFS_WAIT);
+    otEXPECT(aRxParams->mError == OT_ERROR_NONE);
 
     // radio can only receive in particular states.
     if (sSubState == RFSIM_RADIO_SUBSTATE_TX_AIFS_WAIT)
@@ -1188,8 +1206,8 @@ void platformRadioRxDone(otInstance *aInstance, const uint8_t *aBuf, uint16_t aB
 
     // only process in valid substates:
     otEXPECT(sSubState == RFSIM_RADIO_SUBSTATE_RX_FRAME_ONGOING || sSubState == RFSIM_RADIO_SUBSTATE_TX_ACK_RX_ONGOING );
-    memcpy(&sReceiveMessage, aBuf, aBufLength);
 
+    memcpy(&sReceiveMessage, aBuf, aBufLength);
     sReceiveFrame.mLength             = (uint8_t) aBufLength - offsetof(struct RadioMessage, mPsdu);
     sReceiveFrame.mInfo.mRxInfo.mRssi = aRxParams->mPower;
     sReceiveFrame.mInfo.mRxInfo.mLqi  = OT_RADIO_LQI_NONE; // No support of LQI reporting.
@@ -1207,7 +1225,7 @@ void platformRadioRxDone(otInstance *aInstance, const uint8_t *aBuf, uint16_t aB
     else if (sSubState == RFSIM_RADIO_SUBSTATE_RX_FRAME_ONGOING)
     {
         // Rx done, but no Ack is sent. Wait at least turnaround time before I'm ready to Tx (if needed).
-        setRadioSubState(RFSIM_RADIO_SUBSTATE_IFS_WAIT, RFSIM_TURNAROUND_TIME_US);
+        setRadioSubState(RFSIM_RADIO_SUBSTATE_IFS_WAIT, sTurnaroundTimeUs);
         applyRadioDelayedSleep();
     }
     else if (sSubState == RFSIM_RADIO_SUBSTATE_TX_ACK_RX_ONGOING)
@@ -1232,14 +1250,19 @@ void platformRadioCcaDone(otInstance *aInstance, struct RadioCommEventData *aCha
 
     if (aChanData->mPower < sCcaEdThresh || aChanData->mPower == OT_RADIO_RSSI_INVALID)  // channel clear?
     {
-        setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_CCA_TO_TX, RFSIM_TURNAROUND_TIME_US);
+        setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_CCA_TO_TX, sTurnaroundTimeUs);
     }
     else
     {
         // CCA failure case - channel not clear.
         sTxWait = false;
-        setRadioSubState(RFSIM_RADIO_SUBSTATE_READY, UNDEFINED_TIME_US);
-        signalRadioTxDone(aInstance, &sTransmitFrame, NULL, OT_ERROR_CHANNEL_ACCESS_FAILURE);
+        sLastTxEventData.mError = OT_ERROR_CHANNEL_ACCESS_FAILURE;
+        if (sTxInterferer == 0) {
+            setRadioSubState(RFSIM_RADIO_SUBSTATE_READY, UNDEFINED_TIME_US);
+            signalRadioTxDone(aInstance, &sTransmitFrame, NULL, sLastTxEventData.mError);
+        }else{
+            setRadioSubState(RFSIM_RADIO_SUBSTATE_READY, 1);
+        }
     }
 
     exit:
@@ -1253,7 +1276,7 @@ void platformRadioTxDone(otInstance *aInstance, struct RadioCommEventData *aTxDo
     if (sSubState == RFSIM_RADIO_SUBSTATE_RX_ACK_TX_ONGOING)
     {
         // Ack Tx is done now.
-        setRadioSubState(RFSIM_RADIO_SUBSTATE_RX_TX_TO_RX, RFSIM_TURNAROUND_TIME_US);
+        setRadioSubState(RFSIM_RADIO_SUBSTATE_RX_TX_TO_RX, sTurnaroundTimeUs);
     }
     else if (sSubState == RFSIM_RADIO_SUBSTATE_TX_FRAME_ONGOING)
     {
@@ -1261,13 +1284,14 @@ void platformRadioTxDone(otInstance *aInstance, struct RadioCommEventData *aTxDo
         // if Tx was failure: no wait for ACK, abort current Tx and go to Rx state.
         if (!otMacFrameIsAckRequested(&sTransmitFrame) || aTxDoneParams->mError != OT_ERROR_NONE)
         {
-            setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_TX_TO_RX, RFSIM_TURNAROUND_TIME_US);
-            signalRadioTxDone(aInstance, &sTransmitFrame, NULL, aTxDoneParams->mError);
+            setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_TX_TO_RX, sTurnaroundTimeUs);
+            if (sTxInterferer == 0)
+                signalRadioTxDone(aInstance, &sTransmitFrame, NULL, aTxDoneParams->mError);
         }
         else
         {
             // Ack frame is to be sent, move towards AIFS and set radio to transmit.
-            setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_TX_TO_AIFS, RFSIM_TURNAROUND_TIME_US);
+            setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_TX_TO_AIFS, sTurnaroundTimeUs);
         }
     }
 }
@@ -1317,6 +1341,10 @@ void platformRadioRfSimParamSet(otInstance *aInstance, struct RfSimParamEventDat
             break;
         case RFSIM_PARAM_TX_INTERFERER:
             sTxInterferer = (uint8_t) params->mValue;
+            if (sTxInterferer>0) // start operating as Wi-Fi interferer node
+                sTurnaroundTimeUs = OT_RADIO_WIFI_SLOT_TIME_US;
+            else
+                sTurnaroundTimeUs = RFSIM_TURNAROUND_TIME_US;
             break;
         default:
             break;
@@ -1326,6 +1354,9 @@ void platformRadioRfSimParamSet(otInstance *aInstance, struct RfSimParamEventDat
 
 void platformRadioProcess(otInstance *aInstance)
 {
+    if (sTxInterferer > 0)
+        return;
+
     // if stack wants to transmit a frame while radio is busy receiving: signal CCA failure directly.
     // there is no need to sample the radio channel in this case. Also do not wait until the end of Rx period to
     // signal the error, otherwise multiple radio nodes become sync'ed on their CCA period that would follow.
@@ -1353,7 +1384,7 @@ void platformRadioProcess(otInstance *aInstance)
                 if (platformRadioIsTransmitPending())
                 {
                     setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_CCA, OT_RADIO_CCA_TIME_US + FAILSAFE_TIME_US);
-                    startCcaForTransmission(aInstance);
+                    startCcaForTransmission(aInstance, OT_RADIO_CCA_TIME_US);
                 }
                 break;
 
@@ -1370,12 +1401,12 @@ void platformRadioProcess(otInstance *aInstance)
                 break;
 
             case RFSIM_RADIO_SUBSTATE_TX_FRAME_ONGOING:
-                setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_TX_TO_RX, RFSIM_TURNAROUND_TIME_US);
+                setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_TX_TO_RX, sTurnaroundTimeUs);
                 break;
 
             case RFSIM_RADIO_SUBSTATE_TX_TX_TO_RX:
                 // no Ack was requested
-                setRadioSubState(RFSIM_RADIO_SUBSTATE_IFS_WAIT, ifsTime - RFSIM_TURNAROUND_TIME_US);
+                setRadioSubState(RFSIM_RADIO_SUBSTATE_IFS_WAIT, ifsTime - sTurnaroundTimeUs);
                 break;
 
             case RFSIM_RADIO_SUBSTATE_TX_TX_TO_AIFS:
@@ -1407,7 +1438,7 @@ void platformRadioProcess(otInstance *aInstance)
             case RFSIM_RADIO_SUBSTATE_RX_FRAME_ONGOING:
                 // wait until frame Rx is done. In platformRadioRxDone() the next state is selected.
                 // below is a timer-based failsafe in case the RxDone message from simulator was never received.
-                setRadioSubState(RFSIM_RADIO_SUBSTATE_IFS_WAIT, RFSIM_TURNAROUND_TIME_US);
+                setRadioSubState(RFSIM_RADIO_SUBSTATE_IFS_WAIT, sTurnaroundTimeUs);
                 break;
 
             case RFSIM_RADIO_SUBSTATE_RX_AIFS_WAIT:
@@ -1419,13 +1450,13 @@ void platformRadioProcess(otInstance *aInstance)
 
             case RFSIM_RADIO_SUBSTATE_RX_ACK_TX_ONGOING:
                 // at end of Ack transmission.
-                setRadioSubState(RFSIM_RADIO_SUBSTATE_RX_TX_TO_RX, RFSIM_TURNAROUND_TIME_US);
+                setRadioSubState(RFSIM_RADIO_SUBSTATE_RX_TX_TO_RX, sTurnaroundTimeUs);
                 applyRadioDelayedSleep();
                 break;
 
             case RFSIM_RADIO_SUBSTATE_RX_TX_TO_RX:
                 // After Ack Tx and transition back to Rx.
-                setRadioSubState(RFSIM_RADIO_SUBSTATE_IFS_WAIT, RFSIM_TURNAROUND_TIME_US);
+                setRadioSubState(RFSIM_RADIO_SUBSTATE_IFS_WAIT, sTurnaroundTimeUs);
                 break;
 
             case RFSIM_RADIO_SUBSTATE_RX_ENERGY_SCAN:
@@ -1447,45 +1478,63 @@ void platformRadioInterfererProcess(otInstance *aInstance) {
     if (sTxInterferer == 0)
         return;
 
-    // Tx/Rx state machine. Execute time and data based state transitions for substate.
-    // Event based transitions are in functions called by platform-sim.c receiveEvent().
+    // Tx state machine. Execute time and data based state transitions for substate.
     if (otPlatTimeGet() >= sNextRadioEventTime)
     {
-        uint64_t ifsTime = 16; // FIXME - this is just a random testing value.
         switch (sSubState)
         {
-            case RFSIM_RADIO_SUBSTATE_STARTUP: // when radio/node starts.
-                setRadioSubState(RFSIM_RADIO_SUBSTATE_READY, UNDEFINED_TIME_US);
+            case RFSIM_RADIO_SUBSTATE_STARTUP: // when radio/node has started up.
+                setRadioSubState(RFSIM_RADIO_SUBSTATE_READY, 1);
                 break;
 
             case RFSIM_RADIO_SUBSTATE_READY:  // ready/idle substate: decide when to start transmitting frame.
-                sOngoingOperationChannel = sCurrentChannel;
-                if (platformRadioIsTransmitPending())
                 {
-                    setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_CCA, OT_RADIO_CCA_TIME_US/16 + FAILSAFE_TIME_US); // FIXME time
-                    startCcaForTransmission(aInstance);
+                    sOngoingOperationChannel = sCurrentChannel;
+                    sTxWait = false;
+
+                    uint64_t nextTxDelay;
+                    if (sLastTxEventData.mError == OT_ERROR_CHANNEL_ACCESS_FAILURE) {
+                        // last Tx attempt failed, try again after back-off period
+                        nextTxDelay = (uint64_t) otRandomNonCryptoGetUint32InRange(0, OT_RADIO_WIFI_CWMIN_SLOTS) * OT_RADIO_WIFI_SLOT_TIME_US;
+                        setRadioSubState(RFSIM_RADIO_SUBSTATE_CW_BACKOFF, nextTxDelay);
+                    }else {
+                        // pick a random time period in us, to wait until next data transmission. It's based on sTxInterferer set
+                        // traffic level.
+                        nextTxDelay = (uint64_t) otRandomNonCryptoGetUint32InRange(0, 2000000 / sTxInterferer);
+                        setRadioSubState(RFSIM_RADIO_SUBSTATE_AWAIT_CCA, nextTxDelay);
+                    }
+                }
+                break;
+
+            case RFSIM_RADIO_SUBSTATE_CW_BACKOFF:
+                OT_FALL_THROUGH;
+
+            case RFSIM_RADIO_SUBSTATE_AWAIT_CCA:
+                // time to transmit a frame
+                setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_CCA, OT_RADIO_WIFI_CCA_TIME_US + FAILSAFE_TIME_US);
+                startCcaForTransmission(aInstance, OT_RADIO_WIFI_CCA_TIME_US);
+                break;
+
+            case RFSIM_RADIO_SUBSTATE_TX_CCA_TO_TX:
+                {
+                    uint64_t txDuration = (uint64_t) otRandomNonCryptoGetUint32InRange(OT_RADIO_WIFI_MAX_TXTIME_US / 6,
+                                                                                       OT_RADIO_WIFI_MAX_TXTIME_US+1);
+                    radioTransmitInterference(txDuration);
+                    setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_FRAME_ONGOING, sLastTxEventData.mDuration + FAILSAFE_TIME_US);
                 }
                 break;
 
             case RFSIM_RADIO_SUBSTATE_TX_CCA:
                 // CCA period timed out without CCA sample from simulator. Normally should not happen.
-                signalRadioTxDone(aInstance, &sTransmitFrame, NULL, OT_ERROR_CHANNEL_ACCESS_FAILURE);
-                setRadioSubState(RFSIM_RADIO_SUBSTATE_READY, UNDEFINED_TIME_US);
-                sTxWait = false;
-                break;
-
-            case RFSIM_RADIO_SUBSTATE_TX_CCA_TO_TX:
-                radioTransmit(&sTransmitMessage, &sTransmitFrame); // FIXME use special intf transmission here.
-                setRadioSubState(RFSIM_RADIO_SUBSTATE_TX_FRAME_ONGOING, sLastTxEventData.mDuration + FAILSAFE_TIME_US);
-                break;
+                OT_FALL_THROUGH;
 
             case RFSIM_RADIO_SUBSTATE_TX_FRAME_ONGOING:
-                setRadioSubState(RFSIM_RADIO_SUBSTATE_IFS_WAIT, RFSIM_TURNAROUND_TIME_US); // FIXME time
-                break;
+                // Tx period timed out without TxDone event from simulator. Normally should not happen.
+                OT_FALL_THROUGH;
 
-            case RFSIM_RADIO_SUBSTATE_IFS_WAIT:
-                setRadioSubState(RFSIM_RADIO_SUBSTATE_READY, UNDEFINED_TIME_US);
-                sTxWait = false;
+            case RFSIM_RADIO_SUBSTATE_TX_TX_TO_RX:
+                // Simulator notified that Tx is done.
+                setRadioSubState(RFSIM_RADIO_SUBSTATE_READY, 1);
                 break;
 
             default:

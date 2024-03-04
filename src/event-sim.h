@@ -47,10 +47,10 @@
 enum
 {
     OT_SIM_EVENT_ALARM_FIRED         = 0,
-    OT_SIM_EVENT_RADIO_RECEIVED      = 1,
+    OT_SIM_EVENT_RADIO_RECEIVED      = 1, // legacy
     OT_SIM_EVENT_UART_WRITE          = 2,
-    OT_SIM_EVENT_RADIO_SPINEL_WRITE  = 3,
-    OT_SIM_EVENT_POSTCMD             = 4,
+    OT_SIM_EVENT_RADIO_SPINEL_WRITE  = 3, // not used?
+    OT_SIM_EVENT_POSTCMD             = 4, // not used?
     OT_SIM_EVENT_OTNS_STATUS_PUSH    = 5,
     OT_SIM_EVENT_RADIO_COMM_START    = 6,
     OT_SIM_EVENT_RADIO_TX_DONE       = 7,
@@ -59,8 +59,8 @@ enum
     OT_SIM_EVENT_RADIO_RX_DONE       = 10,
     OT_SIM_EVENT_EXT_ADDR            = 11,
     OT_SIM_EVENT_NODE_INFO           = 12,
-    OT_SIM_EVENT_NODE_DISCONNECTED   = 14,
-    OT_SIM_EVENT_RADIO_LOG           = 15,
+    OT_SIM_EVENT_NODE_DISCONNECTED   = 14, // not used on OT node side
+    OT_SIM_EVENT_RADIO_LOG           = 15, // not used on OT node side
     OT_SIM_EVENT_RFSIM_PARAM_GET     = 16,
     OT_SIM_EVENT_RFSIM_PARAM_SET     = 17,
     OT_SIM_EVENT_RFSIM_PARAM_RSP     = 18,
@@ -137,6 +137,14 @@ void otSimSendSleepEvent(void);
  * @param[in]       aLenPayload  Length of aPayload data.
  */
 void otSimSendRadioCommEvent(struct RadioCommEventData *aEventData,  const uint8_t *aPayload, size_t aLenPayload);
+
+/**
+ * Sends a RadioComm (Tx) simulation event to the simulator for transmitting non-802.15.4
+ * interference signals.
+ *
+ * @param[in] aEventData A pointer to specific data for the event.
+ */
+void otSimSendRadioCommInterferenceEvent(struct RadioCommEventData *aEventData);
 
 /**
  * Send a Radio State simulation event to the simulator. It reports radio state

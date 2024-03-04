@@ -67,6 +67,17 @@ void otSimSendRadioCommEvent(struct RadioCommEventData *aEventData, const uint8_
     otSimSendEvent(&event);
 }
 
+void otSimSendRadioCommInterferenceEvent(struct RadioCommEventData *aEventData)
+{
+    struct Event event;
+    event.mEvent = OT_SIM_EVENT_RADIO_COMM_START;
+    memcpy(event.mData, aEventData, sizeof(struct RadioCommEventData));
+    event.mData[sizeof(struct RadioCommEventData)] = aEventData->mChannel; // channel is stored twice TODO
+    event.mDataLength = sizeof(struct RadioCommEventData) + 1;
+
+    otSimSendEvent(&event);
+}
+
 void otSimSendRadioChanSampleEvent(struct RadioCommEventData *aChanData)
 {
     struct Event event;

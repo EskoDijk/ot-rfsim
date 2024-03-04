@@ -34,6 +34,9 @@
 
 #define FAILSAFE_TIME_US 1
 
+// platform-specific OT_ERROR status code to indicate an interference Tx
+#define OT_TX_TYPE_INTF 192
+
 // IEEE 802.15.4 related parameters. See radio-parameters.h for radio-model-specific parameters.
 enum
 {
@@ -48,6 +51,15 @@ enum
     OT_RADIO_MAX_TURNAROUND_TIME_US  = 12 * OT_RADIO_SYMBOL_TIME,         // specified max turnaround time.
     OT_RADIO_MAX_ACK_WAIT_US         = (OT_RADIO_AIFS_TIME_US + (10 * OT_RADIO_SYMBOL_TIME)),
     OT_RADIO_aMaxSifsFrameSize       = 18,              // From 802.15.4 spec - frame size considered 'short'
+};
+
+// Wi-Fi 802.11n related parameters. See radio-parameters.h for radio-model-specific Wi-Fi parameters.
+enum
+{
+    OT_RADIO_WIFI_MAX_TXTIME_US      = 5484,  // https://nl.mathworks.com/help/wlan/gs/packet-size-and-duration-dependencies.html
+    OT_RADIO_WIFI_SLOT_TIME_US       = 9,     // https://en.wikipedia.org/wiki/DCF_Interframe_Space
+    OT_RADIO_WIFI_CCA_TIME_US        = 28,    // https://en.wikipedia.org/wiki/DCF_Interframe_Space
+    OT_RADIO_WIFI_CWMIN_SLOTS        = 32,    // https://wiki.dd-wrt.com/wiki/index.php/WMM
 };
 
 OT_TOOL_PACKED_BEGIN
@@ -89,6 +101,8 @@ typedef enum
     RFSIM_RADIO_SUBSTATE_RX_ENERGY_SCAN,
     RFSIM_RADIO_SUBSTATE_STARTUP,
     RFSIM_RADIO_SUBSTATE_INVALID,
+    RFSIM_RADIO_SUBSTATE_AWAIT_CCA,
+    RFSIM_RADIO_SUBSTATE_CW_BACKOFF,
 } RadioSubState;
 
 #endif // PLATFORM_RFSIM_RADIO_H
