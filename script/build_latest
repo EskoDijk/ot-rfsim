@@ -29,9 +29,15 @@
 
 set -euxo pipefail
 
+OT_OPTIONS=(
+    "-DOT_THREAD_VERSION=1.3.1"
+    "-DOT_VENDOR_MODEL=RFSIM-Node-v1.3.1"
+)
+readonly OT_OPTIONS
+
 git submodule update
 rm -rf build
-./script/build
+./script/build "${OT_OPTIONS[@]}"
 cp ./build/bin/ot-cli-?td ./ot-versions/
 cp ./build/bin/ot-rcp ./ot-versions/
 
