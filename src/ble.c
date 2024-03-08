@@ -157,6 +157,7 @@ void platformBleProcess(otInstance *aInstance) {
     }
 }
 
+/*
 otBleLinkCapabilities otPlatGetBleLinkCapabilities(otInstance *aInstance)
 {
     OT_UNUSED_VARIABLE(aInstance);
@@ -171,4 +172,6 @@ otError otPlatBleGapAdvSetData(otInstance *aInstance, uint8_t *aAdvertisementDat
     OT_UNUSED_VARIABLE(aAdvertisementLen);
     return OT_ERROR_NOT_IMPLEMENTED;
 }
+ */
+
 #endif
