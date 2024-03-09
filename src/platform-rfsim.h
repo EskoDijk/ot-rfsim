@@ -81,10 +81,10 @@ extern uint64_t gLastMsgId;
 extern volatile bool gTerminate;
 
 /**
- * initializes the alarm service used by OpenThread.
+ * initializes the alarm/time service used by OpenThread.
  *
  */
-void platformAlarmInit(uint32_t aSpeedUpFactor);
+void platformAlarmInit();
 
 /**
  * retrieves the time remaining until the alarm fires.
@@ -121,10 +121,17 @@ uint64_t platformAlarmGetNow(void);
 /**
  * advances the alarm time by @p aDelta.
  *
- * @param[in]  aDelta  The amount of time (us) to advance.
+ * @param[in]  aDelta  The amount of time (us) to advance. This is the simulated amount of time: any clock drift
+ *                     effects for the local device must be computed within this function.
  *
  */
 void platformAlarmAdvanceNow(uint64_t aDelta);
+
+// fixme
+void platformAlarmSetClockDrift(int16_t drift);
+
+// fixme
+int16_t platformAlarmGetClockDrift();
 
 /**
  * initializes the radio service used by OpenThread.

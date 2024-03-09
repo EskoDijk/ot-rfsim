@@ -1299,27 +1299,33 @@ void platformRadioTxDone(otInstance *aInstance, struct RadioCommEventData *aTxDo
 void platformRadioRfSimParamGet(otInstance *aInstance, struct RfSimParamEventData *params)
 {
     OT_UNUSED_VARIABLE(aInstance);
+    uint32_t value;
+    uint8_t  param = params->mParam;
 
-    switch(params->mParam){
+    switch(param){
         case RFSIM_PARAM_RX_SENSITIVITY:
-            otSimSendRfSimParamRespEvent(RFSIM_PARAM_RX_SENSITIVITY, (int32_t) sRxSensitivity);
+            value = (int32_t) sRxSensitivity;
             break;
         case RFSIM_PARAM_CCA_THRESHOLD:
-            otSimSendRfSimParamRespEvent(RFSIM_PARAM_CCA_THRESHOLD, (int32_t) sCcaEdThresh);
+            value = (int32_t) sCcaEdThresh;
             break;
         case RFSIM_PARAM_CSL_ACCURACY:
-            otSimSendRfSimParamRespEvent(RFSIM_PARAM_CSL_ACCURACY, (int32_t) sCslAccuracy);
+            value = (int32_t) sCslAccuracy;
             break;
         case RFSIM_PARAM_CSL_UNCERTAINTY:
-            otSimSendRfSimParamRespEvent(RFSIM_PARAM_CSL_UNCERTAINTY, (int32_t) sCslUncertainty);
+            value = (int32_t) sCslUncertainty;
             break;
         case RFSIM_PARAM_TX_INTERFERER:
-            otSimSendRfSimParamRespEvent(RFSIM_PARAM_TX_INTERFERER, (int32_t) sTxInterfererLevel);
+            value = (int32_t) sTxInterfererLevel;
+            break;
+        case RFSIM_PARAM_CLOCK_DRIFT:
+            value = platformAlarmGetClockDrift();
             break;
         default:
-            otSimSendRfSimParamRespEvent(RFSIM_PARAM_UNKNOWN, 0);
-            break;
+            param = RFSIM_PARAM_UNKNOWN;
+            value = 0;
     }
+    otSimSendRfSimParamRespEvent(param, value);
 }
 
 void platformRadioRfSimParamSet(otInstance *aInstance, struct RfSimParamEventData *params)
@@ -1347,6 +1353,9 @@ void platformRadioRfSimParamSet(otInstance *aInstance, struct RfSimParamEventDat
                 sTurnaroundTimeUs = OT_RADIO_WIFI_SLOT_TIME_US;
             else
                 sTurnaroundTimeUs = RFSIM_TURNAROUND_TIME_US;
+            break;
+        case RFSIM_PARAM_CLOCK_DRIFT:
+            platformAlarmSetClockDrift((int8_t) params->mValue);
             break;
         default:
             break;

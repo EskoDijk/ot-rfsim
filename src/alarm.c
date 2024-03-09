@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2018-2023, The OpenThread Authors.
+ *  Copyright (c) 2018-2024, The OpenThread Authors.
  *  All rights reserved.
  *
  *  Redistribution and use in source and binary forms, with or without
@@ -35,8 +35,11 @@
 
 #define US_PER_MS 1000
 #define US_PER_S 1000000
+#define PS_PER_US 1000000
 
-static uint64_t sNow = 0; // microseconds
+static uint64_t sNow           = 0; // node time in microseconds
+static int16_t  sClockDriftPpm = 0; // clock drift parameter, in PPM, can be <0, 0 or >0
+static int64_t  sDriftPicoSec  = 0; // current drift on sNow that happened, in picoseconds
 
 static bool     sIsMsRunning = false;
 static uint32_t sMsAlarm     = 0;
@@ -44,11 +47,11 @@ static uint32_t sMsAlarm     = 0;
 static bool     sIsUsRunning = false;
 static uint32_t sUsAlarm     = 0;
 
-void platformAlarmInit(uint32_t aSpeedUpFactor)
+void platformAlarmInit()
 {
-    OT_UNUSED_VARIABLE(aSpeedUpFactor);
-
     sNow = 0;
+    sDriftPicoSec = 0;
+    sClockDriftPpm = 0;
 }
 
 uint64_t platformAlarmGetNow(void)
@@ -58,7 +61,27 @@ uint64_t platformAlarmGetNow(void)
 
 void platformAlarmAdvanceNow(uint64_t aDelta)
 {
+    int64_t adjust;
+
     sNow += aDelta;
+
+    // additional clock drift computed in picosec precision.
+    sDriftPicoSec += (int64_t)sClockDriftPpm * (int64_t)aDelta;
+    if (sDriftPicoSec >= PS_PER_US || sDriftPicoSec <= -PS_PER_US) { // time to adjust the microsec resolution clock?
+        adjust = sDriftPicoSec / PS_PER_US;
+        sNow += adjust;
+        sDriftPicoSec -= adjust * PS_PER_US;
+    }
+}
+
+int16_t platformAlarmGetClockDrift()
+{
+    return sClockDriftPpm;
+}
+
+void platformAlarmSetClockDrift(int16_t drift)
+{
+    sClockDriftPpm = drift;
 }
 
 uint32_t otPlatAlarmMilliGetNow(void)
@@ -176,13 +199,6 @@ exit:
     }
     else
     {
-        //remaining /= sSpeedUpFactor; // FIXME check  if needed in otns sim
-
-        if (remaining == 0)
-        {
-            remaining = 1;
-        }
-
         if (remaining < (int64_t)(aTimeout->tv_sec) * US_PER_S + (int64_t)(aTimeout->tv_usec))
         {
             aTimeout->tv_sec  = (time_t)(remaining / US_PER_S);
@@ -226,7 +242,6 @@ void platformAlarmProcess(otInstance *aInstance)
         if (remaining <= 0)
         {
             sIsUsRunning = false;
-
             otPlatAlarmMicroFired(aInstance);
         }
     }
