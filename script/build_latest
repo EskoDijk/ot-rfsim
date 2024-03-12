@@ -35,8 +35,15 @@ OT_OPTIONS=(
 )
 readonly OT_OPTIONS
 
-git submodule update
-rm -rf build
-./script/build "${OT_OPTIONS[@]}"
-cp ./build/bin/ot-cli-?td ./ot-versions/
-cp ./build/bin/ot-rcp ./ot-versions/
+main()
+{
+    local options=()
+    options+=("${OT_OPTIONS[@]}" "$@")
+
+    rm -rf build
+    ./script/build "${options[@]}"
+    cp ./build/bin/ot-cli-?td ./ot-versions/
+    cp ./build/bin/ot-rcp ./ot-versions/
+}
+
+main "$@"

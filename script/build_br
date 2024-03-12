@@ -52,7 +52,14 @@ OT_OPTIONS=(
 )
 readonly OT_OPTIONS
 
-git submodule update
-rm -rf build
-./script/build "${OT_OPTIONS[@]}"
-cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd_br
+main()
+{
+    local options=()
+    options+=("${OT_OPTIONS[@]}" "$@")
+
+    rm -rf build
+    ./script/build "${options[@]}"
+    cp ./build/bin/ot-cli-ftd ./ot-versions/ot-cli-ftd_br
+}
+
+main "$@"
