@@ -81,6 +81,16 @@
 #define OPENTHREAD_CONFIG_IP6_SLAAC_ENABLE 1
 #endif
 
+/**
+ * @def OPENTHREAD_CONFIG_IP6_MAX_EXT_MCAST_ADDRS
+ *
+ * Configure a much higher number of externally-configured IPv6 multicast addresses than the default (2).
+ * This is done to support OTNS2 'send' command for multicast traffic generation.
+ */
+#ifndef OPENTHREAD_CONFIG_IP6_MAX_EXT_MCAST_ADDRS
+#define OPENTHREAD_CONFIG_IP6_MAX_EXT_MCAST_ADDRS 1024
+#endif
+
 #ifndef OPENTHREAD_CONFIG_SRP_SERVER_ENABLE
 #define OPENTHREAD_CONFIG_SRP_SERVER_ENABLE 0
 #endif
